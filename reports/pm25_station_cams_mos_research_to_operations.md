@@ -86,7 +86,7 @@ Training-period values are not fitted predictions. They use three expanding-wind
 
 *Figure 4. Chronological observed, selected-model, and persistence PM₂.₅ at +24 h for expanding-window out-of-fold training assessments, validation, and independent testing. Values are daily station medians for the 00 UTC forecast cycle.*
 
-An accompanying [nine-page station atlas](../figures/supplement_all_station_test_timeseries.pdf) shows the complete independent-test sequences at +6, +24, and +72 h for all 27 stations, including the calibrated 10th–90th percentile interval. It is supplied as a separate vector PDF so poor-performing stations and short-lived episodes remain inspectable rather than being concealed by national aggregation.
+The nine-page station atlas is integrated into Appendix B of this report. It shows the complete independent-test sequences at +6, +24, and +72 h for all 27 stations, including calibrated 10th–90th percentile intervals, so poor-performing stations and short-lived episodes remain inspectable rather than being concealed by national aggregation.
 
 ### 4.2 Incremental value of CAMS
 
@@ -249,6 +249,152 @@ Every source observation file, external extract, direct-validation archive, conf
 | SUPADIO | Kubu Raya | 2021-09-09 | 2026-08-31 | 97.9 | 456 | 0 |
 | BATAM2 | Batam | 2021-09-14 | 2026-08-31 | 97.9 | 292 | 0 |
 | BANJARBARU2 | Banjarbaru | 2021-09-08 | 2026-08-31 | 98.2 | 234 | 0 |
+
+## Appendix A. Technical methods and calculations
+
+### A.1 Notation, units, and forecast indexing
+
+Let $s$ index station, $t$ the 00 UTC issue time, and $h$ one of 3, 6, 12, 24, 48, or 72 h. The valid or target time is $v=t+h$, the quality-controlled observation is $y_{s,v}$ (µg m⁻³), and a model forecast is $\hat y_{s,t,h}$. Each lead has a separately fitted model; no forecast is recursively fed into a later lead. UTC is used for storage and splitting. Local clock features use the station's recorded UTC offset.
+
+CAMS mass density is converted without rounding before modelling:
+
+$$x^{\mathrm{CAMS}}_{s,t,h}\;[\mathrm{\mu g\,m^{-3}}] = 10^9 x^{\mathrm{CAMS}}_{s,t,h}\;[\mathrm{kg\,m^{-3}}].$$
+
+An observed PM₂.₅ value is valid when $0 \le y < 985$ µg m⁻³. Relative humidity is available only for $0 < RH \le 100$%, and temperature only for $-10 \le T \le 50$ °C. Screening makes invalid values missing; it does not replace them. For station $s$ and month $m$, Figure 1 uses
+
+$$C_{s,m} = 100\,\frac{n^{\mathrm{valid}}_{s,m}}{n^{\mathrm{expected}}_{s,m}},$$
+
+where the denominator is the number of hourly timestamps inside the intersection of that calendar month with the station's observed span. A station-month outside that span is blank.
+
+### A.2 Predictor calculations
+
+Historical lags are $L^{(k)}_{s,t}=y_{s,t-k}$ for $k=0,1,2,3,6,12,24,48,72,168$ h. Temperature and relative-humidity lags use $k=0,1,3,6,12,24$ h. For rolling window $W$ equal to 3, 6, 12, 24, 72, or 168 h, the available values $A_{s,t,W}$ give
+
+$$\bar y_{s,t,W}=\frac{1}{|A_{s,t,W}|}\sum_{u\in A_{s,t,W}}y_{s,u},\qquad
+\sigma_{s,t,W}=\sqrt{\frac{1}{|A_{s,t,W}|}\sum_{u\in A_{s,t,W}}(y_{s,u}-\bar y_{s,t,W})^2},$$
+
+$$M_{s,t,W}=\max_{u\in A_{s,t,W}}y_{s,u},\qquad
+a_{s,t,W}=\frac{|A_{s,t,W}|}{W}.$$
+
+At least one available value is sufficient for a rolling statistic; unavailable values remain missing. The age feature is $(t-t^{\mathrm{last\ valid}}_s)$ in hours. The national network mean excludes the target station:
+
+$$N_{s,t}=\frac{1}{n_{-s,t}}\sum_{j\in V_t,\,j\ne s}y_{j,t},$$
+
+where $n_{-s,t}$ is the number of other stations with a valid value at $t$.
+
+For neighbours within 400 km, $w_{sj}=1/\max(d_{sj},25)$ and
+
+$$G_{s,t}=\frac{\sum_{j\ne s}w_{sj}y_{j,t}}{\sum_{j\ne s}w_{sj}},$$
+
+using only finite observations and positive weights. Great-circle distance uses the haversine equation $d=2R\arcsin\sqrt{\sin^2(\Delta\phi/2)+\cos\phi_s\cos\phi_j\sin^2(\Delta\lambda/2)}$ with $R=6371.0088$ km. Hour and day-of-year are encoded as sine/cosine pairs, for example $\sin(2\pi q/P)$ and $\cos(2\pi q/P)$ with periods 24 h and 365.25 d. Coordinates, UTC offset, region, timezone, station identity, and forecast-valid CAMS PM₂.₅ complete the primary predictor set. Categorical variables are one-hot encoded, including an explicit missing category. Tree learners retain numerical missing values natively.
+
+### A.3 Baselines, fitted learners, and selection
+
+Persistence is $\hat y^{\mathrm{pers}}_{s,t,h}=y_{s,t}$. Training climatology is the median for station × target month × local target hour; missing groups fall back in order to station × local hour, network local hour, and overall training median. Every climatological statistic is calculated only from the fitting period applicable to that evaluation.
+
+The boosted-tree point model is additive,
+
+$$F_M(\mathbf x)=F_0(\mathbf x)+\eta\sum_{m=1}^M f_m(\mathbf x),$$
+
+where $f_m$ is a regression tree and $\eta$ is the learning rate. LightGBM minimizes absolute-error loss $\sum_i|y_i-F_M(\mathbf x_i)|$ using learning rate 0.035, at most 1400 trees, 63 leaves, minimum 120 child cases, 0.85 row/feature subsampling, and L1/L2 penalties 0.1/0.5. XGBoost uses the same absolute-error target, learning rate 0.04, at most 1200 histogram trees, depth 8, minimum child weight 20.0, 0.85 row/feature subsampling, and L1/L2 penalties 0.1/1.0. Early stopping ends fitting after 80 validation rounds without improvement. Negative predictions are set to zero.
+
+Candidate selection minimizes the mean of six lead-specific, station-balanced validation MAEs. If CAMS LightGBM is within 1% of the minimum, it is preferred by the predeclared operational tie-break. This selected CAMS LightGBM was then evaluated once on 2026. Training targets cover 2023–2024, point-model validation covers 2025, and test targets cover 1 January–31 August 2026. The training time-series panel uses three later-than-fit expanding windows; its +24 h station-balanced out-of-fold MAE is 10.46 µg m⁻³. Its hyperparameters were selected later in 2025, so it is a diagnostic rather than an independent selection estimate.
+
+### A.4 Deterministic accuracy metrics and station balancing
+
+For $n$ paired cases, residual $e_i=\hat y_i-y_i$ and
+
+$$\mathrm{MAE}=\frac1n\sum_i|e_i|,\quad
+\mathrm{RMSE}=\sqrt{\frac1n\sum_i e_i^2},\quad
+\mathrm{Bias}=\frac1n\sum_i e_i,$$
+
+$$r=\frac{\sum_i(y_i-\bar y)(\hat y_i-\bar{\hat y})}{\sqrt{\sum_i(y_i-\bar y)^2\sum_i(\hat y_i-\bar{\hat y})^2}},\quad
+R^2=1-\frac{\sum_i(y_i-\hat y_i)^2}{\sum_i(y_i-\bar y)^2}.$$
+
+For $S$ represented stations, the reported station-balanced metric is $S^-1\sum_s m_s$, giving each station equal weight regardless of its valid-row count. Station skill is $100(1-\mathrm{MAE}_{model,s}/\mathrm{MAE}_{pers,s})$ and the plotted lead skill is the mean of station skills. It therefore need not equal the ratio formed from two already averaged MAEs.
+
+**Worked +24 h test calculation.** The station-balanced selected-model MAE is 10.84 µg m⁻³ and persistence MAE is 13.11 µg m⁻³. The displayed 17.6% is the mean of the 27 station-specific skill percentages, not $100(1-10.84/13.11)$. Positive bias denotes overprediction; all metrics use untruncated concentrations even where a plot axis is truncated.
+
+### A.5 Prediction intervals and their verification
+
+For quantile level $\tau$, LightGBM minimizes pinball loss $\rho_\tau(u)=u[\tau-\mathbb 1(u<0)]$, where $u=y-\hat q_\tau(\mathbf x)$. Models for $\tau=0.1,0.5,0.9$ are fitted on 2023–2024 and tree counts are chosen with January–June 2025. The three raw predictions are sorted per case to remove quantile crossing. On the separate July–December 2025 calibration block, the conformity score is
+
+$$E_i=\max(\hat q_{0.1,i}-y_i,\;y_i-\hat q_{0.9,i}).$$
+
+For calibration size $n_c$ and nominal coverage $1-\alpha=0.8$, $p=\min[\lceil(n_c+1)(1-\alpha)\rceil/n_c,1]$ and $c_h=\max[Q_p(E),0]$. The final interval is $[L_i,U_i]=[\max(0,\hat q_{0.1,i}-c_h),\max(0,\hat q_{0.9,i}+c_h)]$. At +24 h, $n_c=4,395$ and $c_h=0.312$ µg m⁻³.
+
+Empirical coverage is $100n^-1\sum_i\mathbb 1(L_i\le y_i\le U_i)$, mean width is $n^-1\sum_i(U_i-L_i)$, and the interval score is
+
+$$IS_i=(U_i-L_i)+\frac2\alpha(L_i-y_i)\mathbb 1(y_i<L_i)+\frac2\alpha(y_i-U_i)\mathbb 1(y_i>U_i).$$
+
+For +24 h, 6,084 valid test intervals yield 78.0% coverage, 31.7 µg m⁻³ mean width, and 53.4 µg m⁻³ mean interval score. These are empirical checks, not a guarantee under temporal or spatial dependence.
+
+### A.6 Events, resampling, transfer, and diagnostics
+
+For each station and lead, the event threshold is the training-period 90th percentile. A hit has observed and predicted event; a miss has observed but not predicted event; a false alarm has predicted but not observed event. $\mathrm{POD}=H/(H+M)$, $\mathrm{FAR}=F/(H+F)$, and $\mathrm{CSI}=H/(H+M+F)$. At +24 h, $H=357$, $M=423$, and $F=148$, giving POD 45.8%, FAR 29.3%, and CSI 38.5%.
+
+For skill uncertainty, paired absolute-error improvement is first averaged within station × ISO week. The 1,000-replicate cluster bootstrap samples these station-week means with replacement, retains their original number per replicate, and reports the 2.5th and 97.5th percentiles. The all-lead CAMS ablation averages $|e_{obs-only}|-|e_{CAMS}|$ by station-week: 0.178 µg m⁻³ with 95% interval [0.119, 0.242] across 945 station-weeks. Positive values favour CAMS; this is predictive association, not causal attribution.
+
+Station transfer uses five seeded folds of station codes. At each lead, fitting excludes every target and station-identity indicator from the held fold; evaluation is on held stations in 2026. The shorter-window sensitivity refits the frozen model form using 2024 only. Feature shift uses standardized mean difference $(\bar x_{test}-\bar x_{train})/s_{train}$ and a 10-bin population-stability index $\sum_b(p_{test,b}-p_{train,b})\ln(p_{test,b}/p_{train,b})$ with training-decile bins and $10^{-6}$ minimum proportions. Residual plots use $e=\hat y-y$. Feature importance is LightGBM split count $I_j$ normalized within each lead as $100I_j/\sum_kI_k$, then averaged across leads; it is not a causal contribution.
+
+### A.7 Exact derivation of every display
+
+| Display | Population | Value calculation | Display rule |
+| --- | --- | --- | --- |
+| Figure 1 | Hourly station grid within each station's observed span | Monthly valid count divided by expected hourly count; stations ordered by full-span coverage | Grey is missing coverage, not zero |
+| Figure 2 | Common-case independent-test rows | Station-level MAE is calculated first, then averaged equally across stations for each lead and model | No interval; identical evaluation rows across models |
+| Figure 3 | Independent-test rows by station and lead | 100 × (1 − station model MAE / station persistence MAE) | Diverging scale centred at zero skill |
+| Figure 4 | 00 UTC +24 h targets | Daily median across available stations, separately for observation, selected model, and persistence | No smoothing; absent days remain gaps |
+| Figure 5 | Paired independent-test observations and forecasts | Hexagonal-bin counts at +24 h and +72 h with a 1:1 reference line | Axes limited at pooled 99.5th percentile for display only |
+| Figure 6 | Independent-test quantile predictions | Lead-wise empirical inclusion rate and arithmetic mean interval width | Nominal target is 80%; metrics use all valid intervals |
+| Figure 7 | Training-thresholded independent-test events | POD, FAR, and CSI from hits, misses, and false alarms | Threshold is station-and-lead training q90 |
+| Figure 8 | Five station-blocked folds | Held-station MAE and skill, averaged equally across held stations | Station identity omitted from predictors |
+| Figure 9 | Selected fitted LightGBM trees | Split counts normalized within each lead, then averaged across six leads | Predictive use only; not causal importance |
+| Figure 10 | Independent-test residuals | Arithmetic mean of forecast minus observation by target month and lead | Positive values indicate overprediction |
+| Appendix B atlas | Every valid 2026 test sequence at +6, +24, and +72 h | Raw chronological lines for observation, selected model, persistence, and calibrated q10–q90 band | No smoothing or interpolation; one 00 UTC-cycle target per day |
+
+All chart summaries are computed before plotting from saved, checksummed tables or row-level prediction files. No chart applies statistical smoothing. Axis clipping in Figure 5 changes only the visible range, never the reported metrics.
+
+
+## Appendix B. Integrated all-station independent-test time-series atlas
+
+The following nine plates are part of this report, not a separate document. They show every station at +6, +24, and +72 h for 1 January–31 August 2026. Black is observed PM₂.₅, orange is the selected model, dashed grey is persistence, and blue shading is the calibrated nominal 80% interval. Lines are unsmoothed and missing values are not interpolated.
+
+![Atlas plate B1. Independent-test sequences for Banjarbaru (BANJARBARU2); Batam (BATAM2); Bengkulu (BENGKULU). Each row is one station; columns are +6, +24, and +72 h.](../figures/atlas_page_01.png)
+
+*Atlas plate B1. Independent-test sequences for Banjarbaru (BANJARBARU2); Batam (BATAM2); Bengkulu (BENGKULU). Each row is one station; columns are +6, +24, and +72 h.*
+
+![Atlas plate B2. Independent-test sequences for Indrapuri (INDRAPURI2); Kemayoran (KEMAYORAN3); Kota Jambi (JAMBI3). Each row is one station; columns are +6, +24, and +72 h.](../figures/atlas_page_02.png)
+
+*Atlas plate B2. Independent-test sequences for Indrapuri (INDRAPURI2); Kemayoran (KEMAYORAN3); Kota Jambi (JAMBI3). Each row is one station; columns are +6, +24, and +72 h.*
+
+![Atlas plate B3. Independent-test sequences for Kotabaru (KOTABARU); Koto Tabang (KOTOTABANG2); Kubu Raya (SUPADIO). Each row is one station; columns are +6, +24, and +72 h.](../figures/atlas_page_03.png)
+
+*Atlas plate B3. Independent-test sequences for Kotabaru (KOTABARU); Koto Tabang (KOTOTABANG2); Kubu Raya (SUPADIO). Each row is one station; columns are +6, +24, and +72 h.*
+
+![Atlas plate B4. Independent-test sequences for Lore Lindu Bariri (PALU); Malang (MALANG); Maros (MAROS). Each row is one station; columns are +6, +24, and +72 h.](../figures/atlas_page_04.png)
+
+*Atlas plate B4. Independent-test sequences for Lore Lindu Bariri (PALU); Malang (MALANG); Maros (MAROS). Each row is one station; columns are +6, +24, and +72 h.*
+
+![Atlas plate B5. Independent-test sequences for Medan (MEDAN2); Mempawah (PONTIANAK2); Muaro Jambi (JAMBI4). Each row is one station; columns are +6, +24, and +72 h.](../figures/atlas_page_05.png)
+
+*Atlas plate B5. Independent-test sequences for Medan (MEDAN2); Mempawah (PONTIANAK2); Muaro Jambi (JAMBI4). Each row is one station; columns are +6, +24, and +72 h.*
+
+![Atlas plate B6. Independent-test sequences for Musi 2 Palembang (PALEMBANG4); Palangka Raya (PALANGKARAYA2); Pangkalan Bun (PANGKALANBUN2). Each row is one station; columns are +6, +24, and +72 h.](../figures/atlas_page_06.png)
+
+*Atlas plate B6. Independent-test sequences for Musi 2 Palembang (PALEMBANG4); Palangka Raya (PALANGKARAYA2); Pangkalan Bun (PANGKALANBUN2). Each row is one station; columns are +6, +24, and +72 h.*
+
+![Atlas plate B7. Independent-test sequences for Pekanbaru (PEKANBARU2); Pesawaran (PESAWARAN); Samarinda (SAMARINDA2). Each row is one station; columns are +6, +24, and +72 h.](../figures/atlas_page_07.png)
+
+*Atlas plate B7. Independent-test sequences for Pekanbaru (PEKANBARU2); Pesawaran (PESAWARAN); Samarinda (SAMARINDA2). Each row is one station; columns are +6, +24, and +72 h.*
+
+![Atlas plate B8. Independent-test sequences for Semarang (SEMARANG); Sintang (SINTANG); Sleman (MLATI). Each row is one station; columns are +6, +24, and +72 h.](../figures/atlas_page_08.png)
+
+*Atlas plate B8. Independent-test sequences for Semarang (SEMARANG); Sintang (SINTANG); Sleman (MLATI). Each row is one station; columns are +6, +24, and +72 h.*
+
+![Atlas plate B9. Independent-test sequences for Sorong (SORONG); Talang Betutu Palembang (PALEMBANG3); Tanjung Harapan (TANJUNGHARAPAN2). Each row is one station; columns are +6, +24, and +72 h.](../figures/atlas_page_09.png)
+
+*Atlas plate B9. Independent-test sequences for Sorong (SORONG); Talang Betutu Palembang (PALEMBANG3); Tanjung Harapan (TANJUNGHARAPAN2). Each row is one station; columns are +6, +24, and +72 h.*
 
 ## References
 

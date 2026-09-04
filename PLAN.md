@@ -126,9 +126,11 @@ uses only information available at its issue time.
   analyses.
 - [x] Generate and inspect figures and tables.
 - [x] Execute the notebook top-to-bottom without cell errors.
-- [x] Build and validate Markdown, LaTeX, and 14-page A4 PDF reports.
+- [x] Build and validate paired Markdown/LaTeX sources and one A4 PDF report.
 - [x] Benchmark operational inference and complete final artifact validation.
 - [x] Add expanding-window training, validation, and independent-test
   chronological comparisons plus an all-station test atlas.
+- [x] Expand the same report with explicit formulas, worked calculations,
+  figure-by-figure derivations, and all nine station-atlas pages.
 - [x] Implement and schedule the non-public daily shadow acquisition,
   forecast, first-arrival verification, and structured health logging workflow.

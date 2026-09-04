@@ -120,13 +120,16 @@ audits, model bundles, figures, notebook, report, and operational output:
 
 - `tables/`: quality, performance, uncertainty, sensitivity, transfer, and
   runtime tables, including the paired CAMS-versus-observation-only ablation.
-- `figures/`: matching SVG and 300 dpi PNG scientific figures.
+- `figures/`: matching SVG and 300 dpi PNG scientific figures, plus nine
+  high-resolution atlas plates embedded in the report.
 - `models/research/`: models frozen before independent test interpretation.
 - `models/deployment/`: point-model refits use training plus validation;
   interval-model refits stop before the reserved calibration block. Neither
   uses test targets.
 - `notebooks/`: source and executed audit notebook.
-- `reports/`: paired Markdown, LaTeX, and verified A4 PDF report.
+- `reports/`: paired Markdown, LaTeX, and one verified A4 PDF report. The PDF
+  includes the full formulas, worked calculations, figure derivations, and the
+  nine-page all-station test atlas; the atlas is not a separate document.
 - `provenance/`: checksums, environments, resource measurements, compile logs,
   and QA manifests.
 - `output/`: experimental operational forecast files.

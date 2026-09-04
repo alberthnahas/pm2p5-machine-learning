@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
-from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.dates import ConciseDateFormatter, AutoDateLocator
 
 from .data import ExperimentPaths, file_sha256, write_json
@@ -407,20 +406,23 @@ def _plot_all_station_test_atlas(
         .drop_duplicates()
         .sort_values(["station_name", "station_code"])
     )
-    output = paths.root / "figures" / "supplement_all_station_test_timeseries.pdf"
+    figure_dir = paths.root / "figures"
+    figure_dir.mkdir(parents=True, exist_ok=True)
+    for stale_page in figure_dir.glob("atlas_page_*.png"):
+        stale_page.unlink()
     page_count = 0
-    with PdfPages(output, metadata={"Title": "All-station PM2.5 test time-series atlas"}) as pdf:
-        for page_start in range(0, len(station_order), 3):
-            page_stations = station_order.iloc[page_start : page_start + 3]
-            fig, axes = plt.subplots(
+    outputs: list[dict[str, Any]] = []
+    for page_start in range(0, len(station_order), 3):
+        page_stations = station_order.iloc[page_start : page_start + 3]
+        fig, axes = plt.subplots(
                 nrows=len(page_stations),
                 ncols=3,
                 figsize=(11.69, 8.27),
                 squeeze=False,
                 sharex=True,
             )
-            fig.subplots_adjust(left=0.07, right=0.985, top=0.84, bottom=0.10, hspace=0.45, wspace=0.25)
-            fig.suptitle(
+        fig.subplots_adjust(left=0.07, right=0.985, top=0.84, bottom=0.10, hspace=0.45, wspace=0.25)
+        fig.suptitle(
                 "Independent-test time series show station and lead-specific behaviour",
                 x=0.07,
                 y=0.96,
@@ -428,7 +430,7 @@ def _plot_all_station_test_atlas(
                 fontsize=15,
                 weight="bold",
             )
-            fig.text(
+        fig.text(
                 0.07,
                 0.91,
                 "Observed and forecast PM₂.₅ for 1 January–31 August 2026; shaded bands are calibrated 10th–90th percentile prediction intervals.",
@@ -436,14 +438,14 @@ def _plot_all_station_test_atlas(
                 fontsize=10,
                 color="#374151",
             )
-            for row_index, station in enumerate(page_stations.itertuples(index=False)):
-                for column_index, horizon in enumerate((6, 24, 72)):
-                    ax = axes[row_index, column_index]
-                    data = predictions.loc[
-                        predictions.station_code.eq(station.station_code)
-                        & predictions.forecast_hour.eq(horizon)
-                    ].sort_values("target_time_utc")
-                    ax.fill_between(
+        for row_index, station in enumerate(page_stations.itertuples(index=False)):
+            for column_index, horizon in enumerate((6, 24, 72)):
+                ax = axes[row_index, column_index]
+                data = predictions.loc[
+                    predictions.station_code.eq(station.station_code)
+                    & predictions.forecast_hour.eq(horizon)
+                ].sort_values("target_time_utc")
+                ax.fill_between(
                         data.target_time_utc,
                         data.prediction_q10,
                         data.prediction_q90,
@@ -452,37 +454,40 @@ def _plot_all_station_test_atlas(
                         linewidth=0,
                         label="80% interval",
                     )
-                    ax.plot(data.target_time_utc, data.target_pm25_ug_m3, color="#111827", linewidth=1.0, label="Observed")
-                    ax.plot(data.target_time_utc, data.champion, color=COLORS["champion"], linewidth=0.95, label="Selected model")
-                    ax.plot(data.target_time_utc, data.persistence, color=COLORS["persistence"], linewidth=0.7, linestyle="--", alpha=0.8, label="Persistence")
-                    ax.set_title(f"{station.station_name} ({station.station_code}), +{horizon} h", fontsize=8.8, loc="left")
-                    ax.grid(axis="y", color="#D1D5DB", linewidth=0.45)
-                    locator = AutoDateLocator(minticks=3, maxticks=5)
-                    ax.xaxis.set_major_locator(locator)
-                    ax.xaxis.set_major_formatter(ConciseDateFormatter(locator))
-                    if column_index == 0:
-                        ax.set_ylabel("PM₂.₅ (µg m⁻³)")
-            handles, labels = axes[0, 0].get_legend_handles_labels()
-            fig.legend(handles, labels, frameon=False, ncol=4, loc="upper right", bbox_to_anchor=(0.98, 0.895))
-            fig.text(
+                ax.plot(data.target_time_utc, data.target_pm25_ug_m3, color="#111827", linewidth=1.0, label="Observed")
+                ax.plot(data.target_time_utc, data.champion, color=COLORS["champion"], linewidth=0.95, label="Selected model")
+                ax.plot(data.target_time_utc, data.persistence, color=COLORS["persistence"], linewidth=0.7, linestyle="--", alpha=0.8, label="Persistence")
+                ax.set_title(f"{station.station_name} ({station.station_code}), +{horizon} h", fontsize=8.8, loc="left")
+                ax.grid(axis="y", color="#D1D5DB", linewidth=0.45)
+                locator = AutoDateLocator(minticks=3, maxticks=5)
+                ax.xaxis.set_major_locator(locator)
+                ax.xaxis.set_major_formatter(ConciseDateFormatter(locator))
+                if column_index == 0:
+                    ax.set_ylabel("PM₂.₅ (µg m⁻³)")
+        handles, labels = axes[0, 0].get_legend_handles_labels()
+        fig.legend(handles, labels, frameon=False, ncol=4, loc="upper right", bbox_to_anchor=(0.98, 0.895))
+        fig.text(
                 0.07,
                 0.035,
                 "One 00 UTC forecast target per station-day. Lines are unsmoothed; missing values are not interpolated. Forecasts are from the validation-selected model on the untouched 2026 test period.",
                 fontsize=8,
                 color="#4B5563",
             )
-            pdf.savefig(fig)
-            plt.close(fig)
-            page_count += 1
-    return "supplement_all_station_test_timeseries", [
-        {
-            "path": str(output.relative_to(paths.root)),
-            "bytes": output.stat().st_size,
-            "sha256": file_sha256(output),
-            "pages": page_count,
-            "stations": len(station_order),
-        }
-    ]
+        page_count += 1
+        output = figure_dir / f"atlas_page_{page_count:02d}.png"
+        fig.savefig(output, dpi=220, facecolor="white")
+        plt.close(fig)
+        outputs.append(
+            {
+                "path": str(output.relative_to(paths.root)),
+                "bytes": output.stat().st_size,
+                "sha256": file_sha256(output),
+                "page": page_count,
+                "station_codes": page_stations.station_code.astype(str).tolist(),
+                "stations": len(page_stations),
+            }
+        )
+    return "integrated_all_station_test_atlas", outputs
 
 
 def _plot_intervals(paths: ExperimentPaths) -> tuple[str, list[dict[str, Any]]]:
@@ -678,7 +683,7 @@ def make_all_figures(paths: ExperimentPaths | None = None) -> dict[str, Any]:
     manifest = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "figures": records,
-        "format": "SVG plus 300 dpi PNG",
+        "format": "SVG plus 300 dpi PNG; atlas plates are 220 dpi PNG for full-page report embedding",
         "style": "colorblind-aware restrained scientific chart standard",
     }
     write_json(paths.provenance / "figure_manifest.json", manifest)

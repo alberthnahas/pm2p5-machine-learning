@@ -140,6 +140,7 @@ def _report_evidence(paths: ExperimentPaths) -> dict[str, Any]:
     )
     training_oof_metrics = pd.read_csv(paths.tables / "training_oof_metrics.csv")
     training_oof_runtime = pd.read_csv(paths.tables / "training_oof_runtime.csv")
+    station_metadata = pd.read_csv(paths.root / config["station_metadata"])
     shadow_state_path = paths.root / "shadow" / "state" / "first_successful_run.json"
     if not shadow_state_path.exists():
         shadow_state_path = paths.root / "shadow" / "state" / "latest_run.json"
@@ -218,6 +219,7 @@ def _report_evidence(paths: ExperimentPaths) -> dict[str, Any]:
         "operational_metadata": operational_metadata,
         "training_oof_metrics": training_oof_metrics,
         "training_oof_runtime": training_oof_runtime,
+        "station_metadata": station_metadata,
         "shadow_state": shadow_state,
         "shadow_metadata": shadow_metadata,
         "shadow_generation_lag_hours": shadow_generation_lag_hours,
@@ -428,6 +430,285 @@ def _narrative_values(evidence: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _atlas_groups(evidence: dict[str, Any]) -> list[tuple[int, list[str]]]:
+    stations = evidence["station_metadata"].sort_values(["station_name", "station_code"])
+    groups: list[tuple[int, list[str]]] = []
+    for start in range(0, len(stations), 3):
+        subset = stations.iloc[start : start + 3]
+        labels = [
+            f"{row.station_name} ({row.station_code})" for row in subset.itertuples()
+        ]
+        groups.append((len(groups) + 1, labels))
+    return groups
+
+
+def _method_appendix_markdown(evidence: dict[str, Any]) -> str:
+    config = evidence["config"]
+    lead = 24
+    test = evidence["champion_test"].set_index("forecast_hour").loc[lead]
+    persistence = evidence["persistence_test"].set_index("forecast_hour").loc[lead]
+    interval = evidence["intervals_test"].set_index("forecast_hour").loc[lead]
+    event = evidence["events"].set_index("forecast_hour").loc[lead]
+    oof = evidence["training_oof_metrics"]
+    oof = oof.loc[
+        oof.scope.eq("station_balanced_common_cases")
+        & oof.model.eq("champion")
+        & oof.forecast_hour.eq(lead)
+    ].iloc[0]
+    correction = float(evidence["research"]["conformal_correction_ug_m3"][str(lead)])
+    increment = evidence["cams_increment"].loc[
+        evidence["cams_increment"].split.eq("test")
+        & evidence["cams_increment"].forecast_hour.eq("all")
+    ].iloc[0]
+    rows = [
+        ["Figure 1", "Hourly station grid within each station's observed span", "Monthly valid count divided by expected hourly count; stations ordered by full-span coverage", "Grey is missing coverage, not zero"],
+        ["Figure 2", "Common-case independent-test rows", "Station-level MAE is calculated first, then averaged equally across stations for each lead and model", "No interval; identical evaluation rows across models"],
+        ["Figure 3", "Independent-test rows by station and lead", "100 × (1 − station model MAE / station persistence MAE)", "Diverging scale centred at zero skill"],
+        ["Figure 4", "00 UTC +24 h targets", "Daily median across available stations, separately for observation, selected model, and persistence", "No smoothing; absent days remain gaps"],
+        ["Figure 5", "Paired independent-test observations and forecasts", "Hexagonal-bin counts at +24 h and +72 h with a 1:1 reference line", "Axes limited at pooled 99.5th percentile for display only"],
+        ["Figure 6", "Independent-test quantile predictions", "Lead-wise empirical inclusion rate and arithmetic mean interval width", "Nominal target is 80%; metrics use all valid intervals"],
+        ["Figure 7", "Training-thresholded independent-test events", "POD, FAR, and CSI from hits, misses, and false alarms", "Threshold is station-and-lead training q90"],
+        ["Figure 8", "Five station-blocked folds", "Held-station MAE and skill, averaged equally across held stations", "Station identity omitted from predictors"],
+        ["Figure 9", "Selected fitted LightGBM trees", "Split counts normalized within each lead, then averaged across six leads", "Predictive use only; not causal importance"],
+        ["Figure 10", "Independent-test residuals", "Arithmetic mean of forecast minus observation by target month and lead", "Positive values indicate overprediction"],
+        ["Appendix B atlas", "Every valid 2026 test sequence at +6, +24, and +72 h", "Raw chronological lines for observation, selected model, persistence, and calibrated q10–q90 band", "No smoothing or interpolation; one 00 UTC-cycle target per day"],
+    ]
+    figure_table = _markdown_table(
+        ["Display", "Population", "Value calculation", "Display rule"], rows
+    )
+    return rf"""## Appendix A. Technical methods and calculations
+
+### A.1 Notation, units, and forecast indexing
+
+Let $s$ index station, $t$ the 00 UTC issue time, and $h$ one of 3, 6, 12, 24, 48, or 72 h. The valid or target time is $v=t+h$, the quality-controlled observation is $y_{{s,v}}$ (µg m⁻³), and a model forecast is $\hat y_{{s,t,h}}$. Each lead has a separately fitted model; no forecast is recursively fed into a later lead. UTC is used for storage and splitting. Local clock features use the station's recorded UTC offset.
+
+CAMS mass density is converted without rounding before modelling:
+
+$$x^{{\mathrm{{CAMS}}}}_{{s,t,h}}\;[\mathrm{{\mu g\,m^{{-3}}}}] = 10^9 x^{{\mathrm{{CAMS}}}}_{{s,t,h}}\;[\mathrm{{kg\,m^{{-3}}}}].$$
+
+An observed PM₂.₅ value is valid when $0 \le y < 985$ µg m⁻³. Relative humidity is available only for $0 < RH \le 100$%, and temperature only for $-10 \le T \le 50$ °C. Screening makes invalid values missing; it does not replace them. For station $s$ and month $m$, Figure 1 uses
+
+$$C_{{s,m}} = 100\,\frac{{n^{{\mathrm{{valid}}}}_{{s,m}}}}{{n^{{\mathrm{{expected}}}}_{{s,m}}}},$$
+
+where the denominator is the number of hourly timestamps inside the intersection of that calendar month with the station's observed span. A station-month outside that span is blank.
+
+### A.2 Predictor calculations
+
+Historical lags are $L^{{(k)}}_{{s,t}}=y_{{s,t-k}}$ for $k=0,1,2,3,6,12,24,48,72,168$ h. Temperature and relative-humidity lags use $k=0,1,3,6,12,24$ h. For rolling window $W$ equal to 3, 6, 12, 24, 72, or 168 h, the available values $A_{{s,t,W}}$ give
+
+$$\bar y_{{s,t,W}}=\frac{{1}}{{|A_{{s,t,W}}|}}\sum_{{u\in A_{{s,t,W}}}}y_{{s,u}},\qquad
+\sigma_{{s,t,W}}=\sqrt{{\frac{{1}}{{|A_{{s,t,W}}|}}\sum_{{u\in A_{{s,t,W}}}}(y_{{s,u}}-\bar y_{{s,t,W}})^2}},$$
+
+$$M_{{s,t,W}}=\max_{{u\in A_{{s,t,W}}}}y_{{s,u}},\qquad
+a_{{s,t,W}}=\frac{{|A_{{s,t,W}}|}}{{W}}.$$
+
+At least one available value is sufficient for a rolling statistic; unavailable values remain missing. The age feature is $(t-t^{{\mathrm{{last\ valid}}}}_s)$ in hours. The national network mean excludes the target station:
+
+$$N_{{s,t}}=\frac{{1}}{{n_{{-s,t}}}}\sum_{{j\in V_t,\,j\ne s}}y_{{j,t}},$$
+
+where $n_{{-s,t}}$ is the number of other stations with a valid value at $t$.
+
+For neighbours within 400 km, $w_{{sj}}=1/\max(d_{{sj}},25)$ and
+
+$$G_{{s,t}}=\frac{{\sum_{{j\ne s}}w_{{sj}}y_{{j,t}}}}{{\sum_{{j\ne s}}w_{{sj}}}},$$
+
+using only finite observations and positive weights. Great-circle distance uses the haversine equation $d=2R\arcsin\sqrt{{\sin^2(\Delta\phi/2)+\cos\phi_s\cos\phi_j\sin^2(\Delta\lambda/2)}}$ with $R=6371.0088$ km. Hour and day-of-year are encoded as sine/cosine pairs, for example $\sin(2\pi q/P)$ and $\cos(2\pi q/P)$ with periods 24 h and 365.25 d. Coordinates, UTC offset, region, timezone, station identity, and forecast-valid CAMS PM₂.₅ complete the primary predictor set. Categorical variables are one-hot encoded, including an explicit missing category. Tree learners retain numerical missing values natively.
+
+### A.3 Baselines, fitted learners, and selection
+
+Persistence is $\hat y^{{\mathrm{{pers}}}}_{{s,t,h}}=y_{{s,t}}$. Training climatology is the median for station × target month × local target hour; missing groups fall back in order to station × local hour, network local hour, and overall training median. Every climatological statistic is calculated only from the fitting period applicable to that evaluation.
+
+The boosted-tree point model is additive,
+
+$$F_M(\mathbf x)=F_0(\mathbf x)+\eta\sum_{{m=1}}^M f_m(\mathbf x),$$
+
+where $f_m$ is a regression tree and $\eta$ is the learning rate. LightGBM minimizes absolute-error loss $\sum_i|y_i-F_M(\mathbf x_i)|$ using learning rate {config['lightgbm']['learning_rate']}, at most {config['lightgbm']['n_estimators']} trees, {config['lightgbm']['num_leaves']} leaves, minimum {config['lightgbm']['min_child_samples']} child cases, 0.85 row/feature subsampling, and L1/L2 penalties 0.1/0.5. XGBoost uses the same absolute-error target, learning rate {config['xgboost']['learning_rate']}, at most {config['xgboost']['n_estimators']} histogram trees, depth {config['xgboost']['max_depth']}, minimum child weight {config['xgboost']['min_child_weight']}, 0.85 row/feature subsampling, and L1/L2 penalties 0.1/1.0. Early stopping ends fitting after 80 validation rounds without improvement. Negative predictions are set to zero.
+
+Candidate selection minimizes the mean of six lead-specific, station-balanced validation MAEs. If CAMS LightGBM is within 1% of the minimum, it is preferred by the predeclared operational tie-break. This selected CAMS LightGBM was then evaluated once on 2026. Training targets cover 2023–2024, point-model validation covers 2025, and test targets cover 1 January–31 August 2026. The training time-series panel uses three later-than-fit expanding windows; its +24 h station-balanced out-of-fold MAE is {oof.mae_ug_m3:.2f} µg m⁻³. Its hyperparameters were selected later in 2025, so it is a diagnostic rather than an independent selection estimate.
+
+### A.4 Deterministic accuracy metrics and station balancing
+
+For $n$ paired cases, residual $e_i=\hat y_i-y_i$ and
+
+$$\mathrm{{MAE}}=\frac1n\sum_i|e_i|,\quad
+\mathrm{{RMSE}}=\sqrt{{\frac1n\sum_i e_i^2}},\quad
+\mathrm{{Bias}}=\frac1n\sum_i e_i,$$
+
+$$r=\frac{{\sum_i(y_i-\bar y)(\hat y_i-\bar{{\hat y}})}}{{\sqrt{{\sum_i(y_i-\bar y)^2\sum_i(\hat y_i-\bar{{\hat y}})^2}}}},\quad
+R^2=1-\frac{{\sum_i(y_i-\hat y_i)^2}}{{\sum_i(y_i-\bar y)^2}}.$$
+
+For $S$ represented stations, the reported station-balanced metric is $S^{-1}\sum_s m_s$, giving each station equal weight regardless of its valid-row count. Station skill is $100(1-\mathrm{{MAE}}_{{model,s}}/\mathrm{{MAE}}_{{pers,s}})$ and the plotted lead skill is the mean of station skills. It therefore need not equal the ratio formed from two already averaged MAEs.
+
+**Worked +24 h test calculation.** The station-balanced selected-model MAE is {test.mae_ug_m3:.2f} µg m⁻³ and persistence MAE is {persistence.mae_ug_m3:.2f} µg m⁻³. The displayed {test.skill_vs_persistence_pct:.1f}% is the mean of the 27 station-specific skill percentages, not $100(1-{test.mae_ug_m3:.2f}/{persistence.mae_ug_m3:.2f})$. Positive bias denotes overprediction; all metrics use untruncated concentrations even where a plot axis is truncated.
+
+### A.5 Prediction intervals and their verification
+
+For quantile level $\tau$, LightGBM minimizes pinball loss $\rho_\tau(u)=u[\tau-\mathbb 1(u<0)]$, where $u=y-\hat q_\tau(\mathbf x)$. Models for $\tau=0.1,0.5,0.9$ are fitted on 2023–2024 and tree counts are chosen with January–June 2025. The three raw predictions are sorted per case to remove quantile crossing. On the separate July–December 2025 calibration block, the conformity score is
+
+$$E_i=\max(\hat q_{{0.1,i}}-y_i,\;y_i-\hat q_{{0.9,i}}).$$
+
+For calibration size $n_c$ and nominal coverage $1-\alpha=0.8$, $p=\min[\lceil(n_c+1)(1-\alpha)\rceil/n_c,1]$ and $c_h=\max[Q_p(E),0]$. The final interval is $[L_i,U_i]=[\max(0,\hat q_{{0.1,i}}-c_h),\max(0,\hat q_{{0.9,i}}+c_h)]$. At +24 h, $n_c={evidence['research']['prediction_interval_design']['calibration_rows_by_forecast_hour'][str(lead)]:,}$ and $c_h={correction:.3f}$ µg m⁻³.
+
+Empirical coverage is $100n^{-1}\sum_i\mathbb 1(L_i\le y_i\le U_i)$, mean width is $n^{-1}\sum_i(U_i-L_i)$, and the interval score is
+
+$$IS_i=(U_i-L_i)+\frac2\alpha(L_i-y_i)\mathbb 1(y_i<L_i)+\frac2\alpha(y_i-U_i)\mathbb 1(y_i>U_i).$$
+
+For +24 h, {int(interval.n):,} valid test intervals yield {interval.empirical_coverage_pct:.1f}% coverage, {interval.mean_interval_width_ug_m3:.1f} µg m⁻³ mean width, and {interval.mean_interval_score_ug_m3:.1f} µg m⁻³ mean interval score. These are empirical checks, not a guarantee under temporal or spatial dependence.
+
+### A.6 Events, resampling, transfer, and diagnostics
+
+For each station and lead, the event threshold is the training-period 90th percentile. A hit has observed and predicted event; a miss has observed but not predicted event; a false alarm has predicted but not observed event. $\mathrm{{POD}}=H/(H+M)$, $\mathrm{{FAR}}=F/(H+F)$, and $\mathrm{{CSI}}=H/(H+M+F)$. At +24 h, $H={int(event.hits)}$, $M={int(event.misses)}$, and $F={int(event.false_alarms)}$, giving POD {event.probability_of_detection_pct:.1f}%, FAR {event.false_alarm_ratio_pct:.1f}%, and CSI {event.critical_success_index_pct:.1f}%.
+
+For skill uncertainty, paired absolute-error improvement is first averaged within station × ISO week. The {config['bootstrap_replicates']:,}-replicate cluster bootstrap samples these station-week means with replacement, retains their original number per replicate, and reports the 2.5th and 97.5th percentiles. The all-lead CAMS ablation averages $|e_{{obs-only}}|-|e_{{CAMS}}|$ by station-week: {increment.cams_mae_improvement_over_obs_ml_ug_m3:.3f} µg m⁻³ with 95% interval [{increment.ci95_lower_ug_m3:.3f}, {increment.ci95_upper_ug_m3:.3f}] across {int(increment.n_station_weeks):,} station-weeks. Positive values favour CAMS; this is predictive association, not causal attribution.
+
+Station transfer uses five seeded folds of station codes. At each lead, fitting excludes every target and station-identity indicator from the held fold; evaluation is on held stations in 2026. The shorter-window sensitivity refits the frozen model form using 2024 only. Feature shift uses standardized mean difference $(\bar x_{{test}}-\bar x_{{train}})/s_{{train}}$ and a 10-bin population-stability index $\sum_b(p_{{test,b}}-p_{{train,b}})\ln(p_{{test,b}}/p_{{train,b}})$ with training-decile bins and $10^{{-6}}$ minimum proportions. Residual plots use $e=\hat y-y$. Feature importance is LightGBM split count $I_j$ normalized within each lead as $100I_j/\sum_kI_k$, then averaged across leads; it is not a causal contribution.
+
+### A.7 Exact derivation of every display
+
+{figure_table}
+
+All chart summaries are computed before plotting from saved, checksummed tables or row-level prediction files. No chart applies statistical smoothing. Axis clipping in Figure 5 changes only the visible range, never the reported metrics.
+"""
+
+
+def _atlas_markdown(evidence: dict[str, Any]) -> str:
+    blocks = [
+        "## Appendix B. Integrated all-station independent-test time-series atlas\n\n"
+        "The following nine plates are part of this report, not a separate document. "
+        "They show every station at +6, +24, and +72 h for 1 January–31 August 2026. "
+        "Black is observed PM₂.₅, orange is the selected model, dashed grey is persistence, "
+        "and blue shading is the calibrated nominal 80% interval. Lines are unsmoothed and missing values are not interpolated."
+    ]
+    for page, stations in _atlas_groups(evidence):
+        station_text = "; ".join(stations)
+        caption = (
+            f"Atlas plate B{page}. Independent-test sequences for {station_text}. "
+            "Each row is one station; columns are +6, +24, and +72 h."
+        )
+        blocks.append(
+            f"![{caption}](../figures/atlas_page_{page:02d}.png)\n\n*{caption}*"
+        )
+    return "\n\n".join(blocks)
+
+
+def _method_appendix_tex(evidence: dict[str, Any]) -> str:
+    """Typeset the same technical content as the Markdown appendix."""
+    config = evidence["config"]
+    lead = 24
+    test = evidence["champion_test"].set_index("forecast_hour").loc[lead]
+    persistence = evidence["persistence_test"].set_index("forecast_hour").loc[lead]
+    interval = evidence["intervals_test"].set_index("forecast_hour").loc[lead]
+    event = evidence["events"].set_index("forecast_hour").loc[lead]
+    oof = evidence["training_oof_metrics"]
+    oof = oof.loc[
+        oof.scope.eq("station_balanced_common_cases")
+        & oof.model.eq("champion")
+        & oof.forecast_hour.eq(lead)
+    ].iloc[0]
+    correction = float(evidence["research"]["conformal_correction_ug_m3"][str(lead)])
+    increment = evidence["cams_increment"].loc[
+        evidence["cams_increment"].split.eq("test")
+        & evidence["cams_increment"].forecast_hour.eq("all")
+    ].iloc[0]
+    return rf"""
+\appendix
+\section{{Technical methods and calculations}}
+\subsection{{Notation, units, and forecast indexing}}
+Let $s$ index station, $t$ the 00 UTC issue time, and $h\in\{{3,6,12,24,48,72\}}$ h the direct forecast lead. Valid time is $v=t+h$, the quality-controlled observation is $y_{{s,v}}$ (µg m\textsuperscript{{-3}}), and the forecast is $\hat y_{{s,t,h}}$. Each lead has a separately fitted model. UTC is used for storage and splitting; local-clock features use each station's recorded UTC offset. CAMS conversion is
+\begin{{equation}}
+x^{{\mathrm{{CAMS}}}}_{{s,t,h}}[\mathrm{{\mu g\,m^{{-3}}}}]=10^9x^{{\mathrm{{CAMS}}}}_{{s,t,h}}[\mathrm{{kg\,m^{{-3}}}}].
+\end{{equation}}
+Observed PM\textsubscript{{2.5}} is valid for $0\le y<985$ µg m\textsuperscript{{-3}}; relative humidity for $0<RH\le100$\%; and temperature for $-10\le T\le50$ °C. Invalid values become missing, never replacements. Monthly coverage is
+\begin{{equation}} C_{{s,m}}=100\,n^{{\mathrm{{valid}}}}_{{s,m}}/n^{{\mathrm{{expected}}}}_{{s,m}}, \end{{equation}}
+where expected hours lie inside the calendar-month/station-span intersection.
+
+\subsection{{Predictor calculations}}
+Historical lags are $L^{{(k)}}_{{s,t}}=y_{{s,t-k}}$ for $k=0,1,2,3,6,12,24,48,72,168$ h. Meteorological lags use $k=0,1,3,6,12,24$ h. For $W\in\{{3,6,12,24,72,168\}}$ h and its finite set $A_{{s,t,W}}$,
+\begin{{align}}
+\bar y_{{s,t,W}}&=|A|^{{-1}}\sum_{{u\in A}}y_{{s,u}}, &
+\sigma_{{s,t,W}}&=\sqrt{{|A|^{{-1}}\sum_{{u\in A}}(y_{{s,u}}-\bar y)^2}},\\
+M_{{s,t,W}}&=\max_{{u\in A}}y_{{s,u}}, & a_{{s,t,W}}&=|A|/W.
+\end{{align}}
+At least one value is sufficient; no gap is filled. The age feature is time since the latest valid PM\textsubscript{{2.5}}. The network mean excludes station $s$. For neighbours within 400 km, $w_{{sj}}=1/\max(d_{{sj}},25)$ and
+\begin{{equation}} G_{{s,t}}=\frac{{\sum_{{j\ne s}}w_{{sj}}y_{{j,t}}}}{{\sum_{{j\ne s}}w_{{sj}}}}. \end{{equation}}
+Distance is $d=2R\arcsin\sqrt{{\sin^2(\Delta\phi/2)+\cos\phi_s\cos\phi_j\sin^2(\Delta\lambda/2)}}$, $R=6371.0088$ km. Cycles use $\sin(2\pi q/P)$ and $\cos(2\pi q/P)$ for 24 h and 365.25 d. Coordinates, UTC offset, categories, and CAMS complete the predictors. Categories are one-hot encoded; numerical missingness is handled natively by the trees.
+
+\subsection{{Baselines, learners, and selection}}
+Persistence is $\hat y^{{\mathrm{{pers}}}}_{{s,t,h}}=y_{{s,t}}$. Training climatology is the station--target-month--local-hour median, falling back to station--hour, network hour, then overall training median. The boosted prediction is
+\begin{{equation}} F_M(\mathbf x)=F_0(\mathbf x)+\eta\sum_{{m=1}}^M f_m(\mathbf x). \end{{equation}}
+LightGBM minimizes $\sum_i|y_i-F_M(\mathbf x_i)|$ with learning rate {config['lightgbm']['learning_rate']}, at most {config['lightgbm']['n_estimators']} trees, {config['lightgbm']['num_leaves']} leaves, minimum {config['lightgbm']['min_child_samples']} child cases, 0.85 row/feature subsampling, and L1/L2 penalties 0.1/0.5. XGBoost uses absolute error, learning rate {config['xgboost']['learning_rate']}, at most {config['xgboost']['n_estimators']} histogram trees, depth {config['xgboost']['max_depth']}, minimum child weight {config['xgboost']['min_child_weight']}, 0.85 subsampling, and L1/L2 penalties 0.1/1.0. Early stopping patience is 80 rounds. Predictions are clipped at zero.
+
+Selection minimizes the mean of six station-balanced 2025 validation MAEs; CAMS LightGBM is preferred if within 1\% of the minimum. The selected model is opened once on 2026. The expanding-window training diagnostic uses three later-than-fit blocks; +24 h station-balanced out-of-fold MAE is {oof.mae_ug_m3:.2f} µg m\textsuperscript{{-3}}. Later 2025 hyperparameter selection makes this diagnostic non-independent for selection.
+
+\subsection{{Accuracy metrics and station balancing}}
+With $e_i=\hat y_i-y_i$,
+\begin{{align}}
+\mathrm{{MAE}}&=n^{{-1}}\sum_i|e_i|,& \mathrm{{RMSE}}&=\sqrt{{n^{{-1}}\sum_i e_i^2}},& \mathrm{{Bias}}&=n^{{-1}}\sum_i e_i,\\
+r&=\frac{{\sum_i(y_i-\bar y)(\hat y_i-\bar{{\hat y}})}}{{\sqrt{{\sum_i(y_i-\bar y)^2\sum_i(\hat y_i-\bar{{\hat y}})^2}}}},&
+R^2&=1-\frac{{\sum_i(y_i-\hat y_i)^2}}{{\sum_i(y_i-\bar y)^2}}.
+\end{{align}}
+Station-balanced metrics equal $S^{{-1}}\sum_sm_s$. Station skill is $100(1-\mathrm{{MAE}}_{{model,s}}/\mathrm{{MAE}}_{{pers,s}})$ and lead skill is its station mean. At +24 h the model and persistence MAEs are {test.mae_ug_m3:.2f} and {persistence.mae_ug_m3:.2f} µg m\textsuperscript{{-3}}, while displayed skill is {test.skill_vs_persistence_pct:.1f}\%; it is the mean of station-specific ratios, not the ratio of mean MAEs.
+
+\subsection{{Prediction intervals}}
+Quantile models minimize $\rho_\tau(u)=u[\tau-\mathbb 1(u<0)]$, $u=y-\hat q_\tau(\mathbf x)$, for $\tau=0.1,0.5,0.9$. Quantiles are fitted on 2023--2024, tree counts selected on January--June 2025, and raw quantiles sorted. July--December 2025 gives
+\begin{{equation}} E_i=\max(\hat q_{{0.1,i}}-y_i,\;y_i-\hat q_{{0.9,i}}). \end{{equation}}
+For $1-\alpha=0.8$, $p=\min[\lceil(n_c+1)(1-\alpha)\rceil/n_c,1]$, $c_h=\max[Q_p(E),0]$, and $[L_i,U_i]=[\max(0,\hat q_{{0.1,i}}-c_h),\max(0,\hat q_{{0.9,i}}+c_h)]$. At +24 h, $n_c={evidence['research']['prediction_interval_design']['calibration_rows_by_forecast_hour'][str(lead)]:,}$ and $c_h={correction:.3f}$ µg m\textsuperscript{{-3}}. Coverage is $100n^{{-1}}\sum_i\mathbb 1(L_i\le y_i\le U_i)$; width is $n^{{-1}}\sum_i(U_i-L_i)$; and
+\begin{{equation}} IS_i=(U_i-L_i)+\frac2\alpha(L_i-y_i)\mathbb 1(y_i<L_i)+\frac2\alpha(y_i-U_i)\mathbb 1(y_i>U_i). \end{{equation}}
+For +24 h, {int(interval.n):,} test intervals yield {interval.empirical_coverage_pct:.1f}\% coverage, {interval.mean_interval_width_ug_m3:.1f} µg m\textsuperscript{{-3}} mean width, and {interval.mean_interval_score_ug_m3:.1f} µg m\textsuperscript{{-3}} mean interval score.
+
+\subsection{{Events, resampling, transfer, and diagnostics}}
+Each station--lead event threshold is its training q90. $\mathrm{{POD}}=H/(H+M)$, $\mathrm{{FAR}}=F/(H+F)$, and $\mathrm{{CSI}}=H/(H+M+F)$. At +24 h, $H={int(event.hits)}$, $M={int(event.misses)}$, and $F={int(event.false_alarms)}$, giving {event.probability_of_detection_pct:.1f}\%, {event.false_alarm_ratio_pct:.1f}\%, and {event.critical_success_index_pct:.1f}\%.
+
+Absolute-error improvements are averaged by station--ISO-week, then {config['bootstrap_replicates']:,} cluster samples of equal size are drawn with replacement; 2.5th/97.5th percentiles form the interval. The all-lead CAMS ablation is {increment.cams_mae_improvement_over_obs_ml_ug_m3:.3f} µg m\textsuperscript{{-3}} [{increment.ci95_lower_ug_m3:.3f}, {increment.ci95_upper_ug_m3:.3f}] across {int(increment.n_station_weeks):,} station-weeks. Five seeded station folds omit held-station identity. The shorter-window sensitivity uses 2024 only. Shift uses standardized mean difference and a 10-training-decile population-stability index. Residual is $\hat y-y$. LightGBM split count is normalized as $100I_j/\sum_kI_k$ within lead and averaged across leads; it is non-causal.
+
+\subsection{{Exact derivation of report figures}}
+\begin{{longtable}}{{p{{0.10\linewidth}}p{{0.23\linewidth}}p{{0.57\linewidth}}}}
+\toprule Display & Population & Calculation and display rule \\
+\midrule\endhead
+Figure 1 & Station-month hours & Valid/expected hourly coverage inside station span; grey means unavailable. \\
+Figure 2 & Common test cases & Station MAE first, then equal station mean; identical cases across models. \\
+Figure 3 & Station and lead & $100(1-\mathrm{{MAE}}_m/\mathrm{{MAE}}_p)$; diverging scale centred at zero. \\
+Figure 4 & +24 h daily values & Median across available stations; no smoothing; absent days remain gaps. \\
+Figure 5 & Paired test cases & Hex-bin count and 1:1 line; pooled 99.5th-percentile display limit only. \\
+Figure 6 & Valid intervals & Inclusion percentage and arithmetic mean width by lead. \\
+Figure 7 & Training-q90 events & POD, FAR, and CSI from test hits, misses, and false alarms. \\
+Figure 8 & Held stations & Five station folds; equal station aggregation; station identity omitted. \\
+Figure 9 & Selected trees & Normalized split count per lead, then six-lead mean; non-causal. \\
+Figure 10 & Test residuals & Mean forecast minus observation by UTC-derived target month and lead. \\
+Appendix B & All stations & Unsmoothed +6, +24, +72 h sequences and calibrated q10--q90 band; no interpolation. \\
+\bottomrule
+\end{{longtable}}
+All summaries are computed before plotting from saved, checksummed evidence. No chart applies statistical smoothing; Figure 5 axis clipping never changes metrics.
+"""
+
+
+def _atlas_tex(evidence: dict[str, Any]) -> str:
+    blocks = [
+        r"\section{Integrated all-station independent-test time-series atlas}",
+        (
+            "These nine plates are part of this report, not a separate document. "
+            "They show all stations at +6, +24, and +72~h from 1 January--31 August 2026. "
+            "Black is observed PM2.5, orange is the selected model, dashed grey is persistence, "
+            "and blue shading is the calibrated nominal 80\\% interval. Lines are unsmoothed and missing values are not interpolated."
+        ),
+    ]
+    for page, stations in _atlas_groups(evidence):
+        station_text = "; ".join(stations)
+        blocks.extend(
+            [
+                r"\clearpage",
+                r"\begin{landscape}",
+                r"\begin{figure}[p]",
+                r"\centering",
+                rf"\includegraphics[width=\linewidth,height=0.82\textheight,keepaspectratio]{{../figures/atlas_page_{page:02d}.png}}",
+                rf"\caption{{Atlas plate B{page}. Independent-test sequences for {_tex_escape(station_text)}. Rows are stations; columns are +6, +24, and +72 h.}}",
+                r"\end{figure}",
+                r"\end{landscape}",
+            ]
+        )
+    return "\n".join(blocks)
+
+
 def _markdown_report(evidence: dict[str, Any], tables: dict[str, Any]) -> str:
     values = _narrative_values(evidence)
     config = evidence["config"]
@@ -536,7 +817,7 @@ Training-period values are not fitted predictions. They use three expanding-wind
 
 {_figure_markdown(4, 'figure_04_chronological_comparison', 'Chronological observed, selected-model, and persistence PM₂.₅ at +24 h for expanding-window out-of-fold training assessments, validation, and independent testing. Values are daily station medians for the 00 UTC forecast cycle.')}
 
-An accompanying [nine-page station atlas](../figures/supplement_all_station_test_timeseries.pdf) shows the complete independent-test sequences at +6, +24, and +72 h for all 27 stations, including the calibrated 10th–90th percentile interval. It is supplied as a separate vector PDF so poor-performing stations and short-lived episodes remain inspectable rather than being concealed by national aggregation.
+The nine-page station atlas is integrated into Appendix B of this report. It shows the complete independent-test sequences at +6, +24, and +72 h for all 27 stations, including calibrated 10th–90th percentile intervals, so poor-performing stations and short-lived episodes remain inspectable rather than being concealed by national aggregation.
 
 ### 4.2 Incremental value of CAMS
 
@@ -624,6 +905,10 @@ Every source observation file, external extract, direct-validation archive, conf
 
 {_markdown_table(quality_headers, quality_rows)}
 
+{_method_appendix_markdown(evidence)}
+
+{_atlas_markdown(evidence)}
+
 ## References
 
 1. Copernicus Atmosphere Monitoring Service (CAMS). *CAMS global atmospheric composition forecasts*. DOI: [10.24381/04a0b097](https://doi.org/10.24381/04a0b097).
@@ -684,6 +969,8 @@ def _latex_report(evidence: dict[str, Any], tables: dict[str, Any]) -> str:
 \setmainfont{{Liberation Serif}}
 \setsansfont{{Liberation Sans}}
 \usepackage{{microtype}}
+\usepackage{{amsmath}}
+\usepackage{{amssymb}}
 \usepackage{{graphicx}}
 \usepackage{{adjustbox}}
 \usepackage{{booktabs}}
@@ -769,7 +1056,7 @@ Training-period values are not fitted predictions. They use expanding-window ass
 
 {_figure_tex(4, 'figure_04_chronological_comparison', 'Chronological observed, selected-model, and persistence PM2.5 at +24 h for expanding-window out-of-fold training assessments, validation, and independent testing. Values are daily station medians for the 00 UTC forecast cycle.')}
 
-An accompanying nine-page station atlas shows the complete independent-test sequences at +6, +24, and +72~h for all 27 stations, including calibrated 10th--90th percentile intervals. It is supplied separately as a vector PDF so poor-performing stations and short-lived episodes remain inspectable rather than concealed by national aggregation.
+The nine-page station atlas is integrated into Appendix B of this report. It shows complete independent-test sequences at +6, +24, and +72~h for all 27 stations, including calibrated 10th--90th percentile intervals, so poor-performing stations and short-lived episodes remain inspectable rather than concealed by national aggregation.
 
 \subsection{{Incremental value of CAMS}}
 Relative to the otherwise identical observation-only LightGBM, adding forecast-valid CAMS PM\textsubscript{{2.5}} reduced station-week-balanced MAE by \textbf{{{increment_validation.cams_mae_improvement_over_obs_ml_ug_m3:.3f}~µg~m\textsuperscript{{-3}}}} in validation (95\% bootstrap interval {increment_validation.ci95_lower_ug_m3:.3f} to {increment_validation.ci95_upper_ug_m3:.3f}) and \textbf{{{increment_test.cams_mae_improvement_over_obs_ml_ug_m3:.3f}~µg~m\textsuperscript{{-3}}}} in the independent test (95\% interval {increment_test.ci95_lower_ug_m3:.3f} to {increment_test.ci95_upper_ug_m3:.3f}). This is an aggregate predictive association, not causal evidence. Test-period gains are clearest at +3 to +12~h; intervals cross zero at each of +24, +48, and +72~h, so longer-lead incremental benefit remains inconclusive individually.
@@ -849,6 +1136,10 @@ Every source observation file, external archive, sampled field, configuration, r
 \begin{{landscape}}
 {_tex_table(quality_headers, quality_rows, 'llrrrrr')}
 \end{{landscape}}
+
+{_method_appendix_tex(evidence)}
+
+{_atlas_tex(evidence)}
 
 \section{{References}}
 \begin{{thebibliography}}{{9}}
@@ -957,6 +1248,9 @@ def compile_and_verify_pdf(paths: ExperimentPaths | None = None) -> dict[str, An
         "Executive finding",
         "Computational requirements",
         "Limitations and readiness gates",
+        "Technical methods and calculations",
+        "Integrated all-station independent-test time-series atlas",
+        "Atlas plate B9",
         "References",
     ]
     missing_phrases = [phrase for phrase in required_phrases if phrase not in extracted]

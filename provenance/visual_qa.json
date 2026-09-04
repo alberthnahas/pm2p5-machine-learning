@@ -1,7 +1,7 @@
 {
-  "inspected_utc": "2026-09-04T11:27:00Z",
-  "method": "Full report and nine-page supplement contact-sheet inspection, plus full-resolution review of the chronological comparison, report pages 4-6 and 11, table typography, legends, gaps, and operational-latency wording",
-  "figure_manifest_sha256": "79f0c308352845f55ec78063f0104bbb068ab510e071b8ddbbb7544f47b00f2b",
+  "inspected_utc": "2026-09-04T11:43:00Z",
+  "method": "Contact-sheet inspection of all 26 rendered report pages, including the formula and calculation appendix and all nine integrated atlas plates; full-resolution checks of chart labels, table typography, equations, legends, gaps, and atlas source plates",
+  "figure_manifest_sha256": "3f409b6ed20d6e82bc43130d6b9e1f81f17e6cfaa35456ae4f546531bdc0903e",
   "figures_inspected": [
     "figure_01_observation_coverage",
     "figure_02_test_performance",
@@ -13,12 +13,11 @@
     "figure_07_feature_importance",
     "figure_08_station_transfer",
     "figure_09_residual_bias",
-    "supplement_all_station_test_timeseries"
+    "integrated_all_station_test_atlas"
   ],
-  "pdf_sha256": "9f3a64610b588eab1bb98e73e83a8d6a69c3c2b55e537c588bc3d7fefea9ebdb",
-  "pdf_pages_inspected": 14,
-  "supplement_pdf_sha256": "4c5bc557bd4ee138b33f5d665c6e3da1788250ef34059c8491d4e268b97a9fa3",
-  "supplement_pages_inspected": 9,
+  "pdf_sha256": "b0baaa685f9e837fb4809b21b15a68a17ef3b086db80f9aa6ea3f87855525a5e",
+  "pdf_pages_inspected": 26,
+  "atlas_plates_inspected": 9,
   "checks": {
     "no_clipped_content": true,
     "no_overlapping_content": true,
@@ -27,7 +26,9 @@
     "color_encoding_consistent_with_captions": true,
     "missing_data_visually_distinct_from_zero": true,
     "chronological_split_labels_correct": true,
-    "all_27_stations_present_in_supplement": true,
+    "equations_and_worked_values_legible": true,
+    "all_27_stations_present_in_integrated_atlas": true,
+    "no_separate_atlas_document": true,
     "forecast_generation_latency_disclosed": true
   },
   "status": "pass"

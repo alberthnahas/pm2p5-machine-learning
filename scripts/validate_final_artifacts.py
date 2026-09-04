@@ -245,6 +245,52 @@ def main() -> None:
         bool(ordered.all()),
         {"checked_rows": len(intervals), "violations": int((~ordered).sum())},
     )
+    worked = predictions.loc[
+        predictions.split.eq("test") & predictions.forecast_hour.eq(24)
+    ].dropna(
+        subset=[
+            "target_pm25_ug_m3",
+            "persistence",
+            "climatology",
+            "raw_cams",
+            "obs_lgbm",
+            "cams_lgbm",
+            "cams_xgboost",
+            "champion",
+        ]
+    )
+    worked_station = worked.groupby("station_code", observed=True).apply(
+        lambda group: pd.Series(
+            {
+                "model_mae": (group.champion - group.target_pm25_ug_m3).abs().mean(),
+                "persistence_mae": (
+                    group.persistence - group.target_pm25_ug_m3
+                ).abs().mean(),
+            }
+        ),
+        include_groups=False,
+    )
+    worked_station["skill_pct"] = 100.0 * (
+        1.0 - worked_station.model_mae / worked_station.persistence_mae
+    )
+    summary = pd.read_csv(ROOT / "tables" / "metrics_summary.csv")
+    reported_24 = summary.loc[
+        summary.split.eq("test")
+        & summary.scope.eq("station_balanced_common_cases")
+        & summary.model.eq("champion")
+        & summary.forecast_hour.eq(24)
+    ].iloc[0]
+    check(
+        "worked station-balanced calculation in methods appendix",
+        abs(worked_station.model_mae.mean() - reported_24.mae_ug_m3) < 1.0e-10
+        and abs(worked_station.skill_pct.mean() - reported_24.skill_vs_persistence_pct)
+        < 1.0e-10,
+        {
+            "recomputed_mae_ug_m3": float(worked_station.model_mae.mean()),
+            "recomputed_mean_station_skill_pct": float(worked_station.skill_pct.mean()),
+            "stations": len(worked_station),
+        },
+    )
     training_oof = pd.read_csv(
         ROOT / "data" / "derived" / "training_oof_predictions.csv.gz",
         parse_dates=[
@@ -346,6 +392,30 @@ def main() -> None:
             "figures": len(figure_manifest["figures"]),
             "mismatches": figure_mismatches,
             "png_dimensions": png_dimensions,
+        },
+    )
+    atlas = next(
+        row
+        for row in figure_manifest["figures"]
+        if row["figure"] == "integrated_all_station_test_atlas"
+    )
+    atlas_station_codes = [
+        station_code
+        for output in atlas["outputs"]
+        for station_code in output["station_codes"]
+    ]
+    check(
+        "nine atlas plates integrated without a separate PDF",
+        len(atlas["outputs"]) == 9
+        and [output["page"] for output in atlas["outputs"]] == list(range(1, 10))
+        and len(atlas_station_codes) == len(set(atlas_station_codes)) == 27
+        and not (ROOT / "figures" / "supplement_all_station_test_timeseries.pdf").exists(),
+        {
+            "plates": len(atlas["outputs"]),
+            "unique_stations": len(set(atlas_station_codes)),
+            "separate_atlas_pdf_exists": (
+                ROOT / "figures" / "supplement_all_station_test_timeseries.pdf"
+            ).exists(),
         },
     )
     pdf = read_json(ROOT / "provenance" / "pdf_qa.json")

@@ -151,19 +151,120 @@
       ]
     },
     {
-      "figure": "supplement_all_station_test_timeseries",
+      "figure": "integrated_all_station_test_atlas",
       "outputs": [
         {
-          "bytes": 768270,
-          "pages": 9,
-          "path": "figures/supplement_all_station_test_timeseries.pdf",
-          "sha256": "4c5bc557bd4ee138b33f5d665c6e3da1788250ef34059c8491d4e268b97a9fa3",
-          "stations": 27
+          "bytes": 761021,
+          "page": 1,
+          "path": "figures/atlas_page_01.png",
+          "sha256": "f34d63b939bdd564608d8f4bf492cee973294b275e0638f15f7e3f056db963d6",
+          "station_codes": [
+            "BANJARBARU2",
+            "BATAM2",
+            "BENGKULU"
+          ],
+          "stations": 3
+        },
+        {
+          "bytes": 1028780,
+          "page": 2,
+          "path": "figures/atlas_page_02.png",
+          "sha256": "c9fc246d3535217dea5da5a7d9d8e9b76f5bf9c9fb545d9159633a4068980c29",
+          "station_codes": [
+            "INDRAPURI2",
+            "KEMAYORAN3",
+            "JAMBI3"
+          ],
+          "stations": 3
+        },
+        {
+          "bytes": 970615,
+          "page": 3,
+          "path": "figures/atlas_page_03.png",
+          "sha256": "b0a7228dbce4182b2bcd5d5a6db2832f47e8150913d342aa76512e26cbbee14a",
+          "station_codes": [
+            "KOTABARU",
+            "KOTOTABANG2",
+            "SUPADIO"
+          ],
+          "stations": 3
+        },
+        {
+          "bytes": 886005,
+          "page": 4,
+          "path": "figures/atlas_page_04.png",
+          "sha256": "4705b0182163b410fd15d010bdc6ec9dc659a7a48f760aea185ef7175fed537e",
+          "station_codes": [
+            "PALU",
+            "MALANG",
+            "MAROS"
+          ],
+          "stations": 3
+        },
+        {
+          "bytes": 936884,
+          "page": 5,
+          "path": "figures/atlas_page_05.png",
+          "sha256": "f263f03d153c4d2c2c3ba6b8508e26a0f25da1973264aff39a5dbed8b0ad51c3",
+          "station_codes": [
+            "MEDAN2",
+            "PONTIANAK2",
+            "JAMBI4"
+          ],
+          "stations": 3
+        },
+        {
+          "bytes": 632014,
+          "page": 6,
+          "path": "figures/atlas_page_06.png",
+          "sha256": "b110061e0e550051bfe73b1501aa0dac758d349c34f0b2e1f415ff7a5a0a59d3",
+          "station_codes": [
+            "PALEMBANG4",
+            "PALANGKARAYA2",
+            "PANGKALANBUN2"
+          ],
+          "stations": 3
+        },
+        {
+          "bytes": 967411,
+          "page": 7,
+          "path": "figures/atlas_page_07.png",
+          "sha256": "b2fdb8bf2c6d226f8d8fb970e82a4ffece7e0746e6d73aacc2fda36804fd5c84",
+          "station_codes": [
+            "PEKANBARU2",
+            "PESAWARAN",
+            "SAMARINDA2"
+          ],
+          "stations": 3
+        },
+        {
+          "bytes": 933138,
+          "page": 8,
+          "path": "figures/atlas_page_08.png",
+          "sha256": "efbe33a2f2308348aa88ded2bd7f72b102e4366186603ea86eb87036337a3ce2",
+          "station_codes": [
+            "SEMARANG",
+            "SINTANG",
+            "MLATI"
+          ],
+          "stations": 3
+        },
+        {
+          "bytes": 774182,
+          "page": 9,
+          "path": "figures/atlas_page_09.png",
+          "sha256": "f787ca7653641ab6d63b926b2c30346eb577e126386727e7665926d7e6ec830f",
+          "station_codes": [
+            "SORONG",
+            "PALEMBANG3",
+            "TANJUNGHARAPAN2"
+          ],
+          "stations": 3
         }
       ]
     }
   ],
-  "format": "SVG plus 300 dpi PNG",
-  "generated_utc": "2026-09-04T11:17:55.434065+00:00",
+  "format": "SVG plus 300 dpi PNG; atlas plates are 220 dpi PNG for full-page report embedding",
+  "generated_utc": "2026-09-04T11:39:22.620211+00:00",
   "style": "colorblind-aware restrained scientific chart standard"
 }
