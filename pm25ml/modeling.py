@@ -642,6 +642,152 @@ def _spatial_transfer_evaluation(
     )
 
 
+def generate_expanding_window_training_predictions(
+    paths: ExperimentPaths | None = None,
+) -> dict[str, Any]:
+    """Create chronological out-of-fold predictions inside the training period.
+
+    Each six-month assessment block is predicted from earlier targets, so the
+    display does not use fitted values. The model family and tree counts remain
+    those selected by the later validation workflow; this limitation is saved
+    with the diagnostic rather than presenting the result as model-selection
+    evidence.
+    """
+
+    paths = paths or ExperimentPaths()
+    config = load_config(paths.config)
+    modeling = load_modeling_table(paths)
+    manifest = json.loads(
+        (paths.provenance / "research_model_manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    champion = str(manifest["champion"])
+    include_cams = champion != "obs_lgbm"
+    source_columns = feature_columns(modeling, include_cams=include_cams)
+    iteration_lookup = {
+        (str(row["model"]), int(row["forecast_hour"])): int(row["best_iteration"])
+        for row in manifest["models"]
+    }
+    folds = [
+        (pd.Timestamp("2023-07-01T00:00:00Z"), pd.Timestamp("2023-12-31T23:00:00Z")),
+        (pd.Timestamp("2024-01-01T00:00:00Z"), pd.Timestamp("2024-06-30T23:00:00Z")),
+        (pd.Timestamp("2024-07-01T00:00:00Z"), pd.Timestamp("2024-12-31T23:00:00Z")),
+    ]
+    prediction_frames: list[pd.DataFrame] = []
+    runtime_rows: list[dict[str, Any]] = []
+    for horizon in config["forecast_hours"]:
+        horizon_data = modeling.loc[
+            modeling.forecast_hour.eq(horizon)
+            & modeling.split.eq("train")
+            & modeling.target_pm25_ug_m3.notna()
+        ].copy()
+        for fold_number, (fold_start, fold_end) in enumerate(folds, start=1):
+            training = horizon_data.loc[horizon_data.target_time_utc.lt(fold_start)].copy()
+            assessment = horizon_data.loc[
+                horizon_data.target_time_utc.between(fold_start, fold_end, inclusive="both")
+            ].copy()
+            assessment_model = assessment
+            if include_cams:
+                training = training.loc[training.cams_pm25_ug_m3.notna()].copy()
+                assessment_model = assessment.loc[
+                    assessment.cams_pm25_ug_m3.notna()
+                ].copy()
+            if training.empty or assessment_model.empty:
+                raise ValueError(
+                    f"Training OOF fold {fold_number} is empty at +{horizon} h"
+                )
+            best_iteration = iteration_lookup[(champion, int(horizon))]
+            if champion == "cams_xgboost":
+                fitted = _fit_xgboost(
+                    int(horizon),
+                    source_columns,
+                    training,
+                    training.iloc[0:0],
+                    config,
+                    n_estimators=best_iteration,
+                    use_early_stopping=False,
+                )
+            else:
+                fitted = _fit_lightgbm(
+                    model_name=f"training_oof_{champion}",
+                    forecast_hour=int(horizon),
+                    feature_variant="cams" if include_cams else "observation_only",
+                    source_columns=source_columns,
+                    train=training,
+                    validation=training.iloc[0:0],
+                    config=config,
+                    n_estimators=best_iteration,
+                    use_early_stopping=False,
+                )
+            climatology = _climatology_predictor(training, [assessment])[0]
+            output = assessment[
+                [
+                    "station_code",
+                    "station_name",
+                    "region",
+                    "issue_time_utc",
+                    "target_time_utc",
+                    "forecast_hour",
+                    "target_pm25_ug_m3",
+                    "pm25_lag_0h",
+                    "cams_pm25_ug_m3",
+                    "latest_pm25_age_hours",
+                    "target_month",
+                    "target_hour_local",
+                ]
+            ].copy()
+            output["split"] = "training_oof"
+            output["persistence"] = output.pm25_lag_0h
+            output["climatology"] = climatology
+            output["raw_cams"] = output.cams_pm25_ug_m3
+            output["champion"] = np.nan
+            predicted = predict_model(fitted, assessment_model, source_columns)
+            output.loc[assessment_model.index, "champion"] = predicted
+            output["oof_fold"] = fold_number
+            output["oof_training_target_end_utc"] = training.target_time_utc.max()
+            output["oof_assessment_start_utc"] = fold_start
+            output["oof_assessment_end_utc"] = fold_end
+            prediction_frames.append(output)
+            runtime_rows.append(
+                {
+                    "forecast_hour": int(horizon),
+                    "oof_fold": fold_number,
+                    "fit_rows": len(training),
+                    "assessment_rows": len(assessment),
+                    "model_assessment_rows": len(assessment_model),
+                    "best_iteration_from_validation_selected_model": best_iteration,
+                    "fit_seconds": fitted.training_seconds,
+                    "assessment_start_utc": fold_start.isoformat(),
+                    "assessment_end_utc": fold_end.isoformat(),
+                    "latest_training_target_utc": training.target_time_utc.max().isoformat(),
+                }
+            )
+    predictions = pd.concat(prediction_frames, ignore_index=True)
+    predictions.to_csv(
+        paths.derived / "training_oof_predictions.csv.gz",
+        index=False,
+        compression="gzip",
+    )
+    _, metrics = performance_tables(
+        predictions,
+        ["persistence", "climatology", "raw_cams", "champion"],
+    )
+    metrics.to_csv(paths.tables / "training_oof_metrics.csv", index=False)
+    runtime = pd.DataFrame(runtime_rows)
+    runtime.to_csv(paths.tables / "training_oof_runtime.csv", index=False)
+    return {
+        "rows": len(predictions),
+        "folds": len(folds),
+        "forecast_hours": config["forecast_hours"],
+        "fit_seconds": float(runtime.fit_seconds.sum()),
+        "diagnostic_limitation": (
+            "Every assessment row is out of fold in time, but model family and tree "
+            "counts were selected by the later 2025 validation workflow."
+        ),
+    }
+
+
 def train_and_evaluate(paths: ExperimentPaths | None = None) -> dict[str, Any]:
     paths = paths or ExperimentPaths()
     config = load_config(paths.config)
@@ -1091,6 +1237,7 @@ def train_and_evaluate(paths: ExperimentPaths | None = None) -> dict[str, Any]:
                 }
             )
     write_json(paths.provenance / "research_model_manifest.json", model_manifest)
+    training_oof = generate_expanding_window_training_predictions(paths)
     return {
         "champion": champion,
         "ranking": ranking.to_dict(orient="records"),
@@ -1103,4 +1250,5 @@ def train_and_evaluate(paths: ExperimentPaths | None = None) -> dict[str, Any]:
             orient="records"
         ),
         "runtime_seconds": time.perf_counter() - started_all,
+        "training_oof": training_oof,
     }

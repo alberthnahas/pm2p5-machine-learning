@@ -14,3 +14,11 @@ reports/rendered_pages/
 # Local execution and compilation logs can contain machine-specific details.
 provenance/*.log
 provenance/report_extracted_text.txt
+
+# Prospective shadow inputs, forecasts, verification rows, and local logs are
+# operational data. Keep the documented workflow, not the data, in Git.
+shadow/inputs/
+shadow/forecasts/
+shadow/verification/
+shadow/state/
+shadow/logs/

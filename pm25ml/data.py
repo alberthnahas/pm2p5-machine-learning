@@ -69,10 +69,12 @@ def file_sha256(path: Path) -> str:
 
 def write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
+    temporary = path.with_suffix(path.suffix + ".part")
+    temporary.write_text(
         json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
+    os.replace(temporary, path)
 
 
 def _validate_station_metadata(metadata: pd.DataFrame, observation_paths: list[Path]) -> None:

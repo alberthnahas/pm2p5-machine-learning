@@ -8,9 +8,9 @@ station history and network context are combined with forecast-valid CAMS
 PM₂.₅. An observation-only model provides both an ablation and a degraded
 fallback.
 
-The system is **pre-operational**. It has a retrospective chronological test
-and a station-transfer diagnostic, but it is not connected to a scheduler or a
-public product.
+The system is **pre-operational**. It has a retrospective chronological test,
+an expanding-window training diagnostic, a station-transfer diagnostic, and a
+scheduled non-public shadow workflow. It is not connected to a public product.
 
 ## Scientific design
 
@@ -94,6 +94,20 @@ and CAMS inputs. Output rows include point forecasts, calibrated q10–q90
 intervals, input freshness, and a status. If CAMS is absent, the point forecast
 uses the observation-only fallback and intervals are withheld. A fallback row
 must not be presented as equivalent to the primary forecast.
+
+## Daily shadow evaluation
+
+The daily workflow runs the validated 00 UTC initialization in shadow mode,
+retains the actual generation time, and excludes rows generated after their
+target time from prospective claims. It snapshots the official BMKG dashboard,
+acquires current CAMS directly from the Copernicus Atmosphere Data Store,
+writes immutable local forecasts, and scores them only after an observation
+appears. See `shadow/README.md`.
+
+The deployed model is deliberately frozen during the first 60–90 days. Shadow
+observations and errors are evidence for a separately versioned retraining
+decision; the cron job does not adapt the model in place because that would
+invalidate prospective evaluation.
 
 Validate the complete frozen result, including source checksums, leakage
 audits, model bundles, figures, notebook, report, and operational output:

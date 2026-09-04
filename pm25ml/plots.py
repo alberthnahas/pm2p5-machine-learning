@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
+from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.dates import ConciseDateFormatter, AutoDateLocator
 
 from .data import ExperimentPaths, file_sha256, write_json
 
@@ -280,6 +282,209 @@ def _plot_observed_predicted(paths: ExperimentPaths) -> tuple[str, list[dict[str
     return "figure_04_observed_vs_predicted", _save(fig, paths.root / "figures", "figure_04_observed_vs_predicted")
 
 
+def _plot_chronological_comparison(
+    paths: ExperimentPaths,
+) -> tuple[str, list[dict[str, Any]]]:
+    training = pd.read_csv(
+        paths.derived / "training_oof_predictions.csv.gz",
+        parse_dates=["target_time_utc"],
+        low_memory=False,
+    )
+    later = pd.read_csv(
+        paths.derived / "validation_test_predictions.csv.gz",
+        parse_dates=["target_time_utc"],
+        low_memory=False,
+    )
+    frames = []
+    for label, frame in (
+        ("Training: expanding-window out-of-fold", training),
+        ("Validation: model selection", later.loc[later.split.eq("validation")]),
+        ("Independent test", later.loc[later.split.eq("test")]),
+    ):
+        subset = frame.loc[frame.forecast_hour.eq(24)].copy()
+        subset["date_utc"] = subset.target_time_utc.dt.floor("D")
+        daily = (
+            subset.groupby("date_utc", as_index=False)
+            .agg(
+                observed=("target_pm25_ug_m3", "median"),
+                model=("champion", "median"),
+                persistence=("persistence", "median"),
+                stations=("station_code", "nunique"),
+            )
+            .sort_values("date_utc")
+        )
+        complete_index = pd.date_range(
+            daily.date_utc.min(), daily.date_utc.max(), freq="D", tz="UTC"
+        )
+        daily = daily.set_index("date_utc").reindex(complete_index)
+        frames.append((label, daily))
+
+    fig = plt.figure(figsize=(7.15, 7.0))
+    fig.suptitle(
+        "Chronological evaluation exposes timing and peak errors hidden by aggregate scores",
+        x=0.08,
+        y=0.985,
+        ha="left",
+        va="top",
+        fontsize=13.2,
+        weight="bold",
+    )
+    fig.text(
+        0.08,
+        0.925,
+        "Daily station-median +24 h forecasts are shown without smoothing; training-period values are expanding-window out-of-fold predictions, not fitted values.",
+        ha="left",
+        va="top",
+        fontsize=8.8,
+        color="#1F2937",
+        bbox={"boxstyle": "round,pad=0.42", "facecolor": "#EEF6F3", "edgecolor": "none"},
+    )
+    axes = [
+        fig.add_axes([0.10, 0.67, 0.84, 0.16]),
+        fig.add_axes([0.10, 0.405, 0.84, 0.16]),
+        fig.add_axes([0.10, 0.14, 0.84, 0.16]),
+    ]
+    for ax, (label, daily) in zip(axes, frames, strict=True):
+        ax.plot(
+            daily.index,
+            daily.observed,
+            color="#111827",
+            linewidth=1.35,
+            label="Observed",
+            zorder=4,
+        )
+        ax.plot(
+            daily.index,
+            daily.model,
+            color=COLORS["champion"],
+            linewidth=1.25,
+            label="Selected model",
+            zorder=3,
+        )
+        ax.plot(
+            daily.index,
+            daily.persistence,
+            color=COLORS["persistence"],
+            linewidth=0.9,
+            linestyle="--",
+            alpha=0.85,
+            label="Persistence",
+            zorder=2,
+        )
+        ax.set_title(label, loc="left", fontsize=9.3, weight="bold")
+        ax.set_ylabel("PM₂.₅\n(µg m⁻³)")
+        ax.grid(axis="y", color="#D1D5DB", linewidth=0.5)
+        locator = AutoDateLocator(minticks=4, maxticks=8)
+        ax.xaxis.set_major_locator(locator)
+        ax.xaxis.set_major_formatter(ConciseDateFormatter(locator))
+    axes[0].legend(frameon=False, ncol=3, loc="upper right")
+    axes[-1].set_xlabel("Target date (UTC)")
+    _footer(
+        fig,
+        "Network median across available stations for the 00 UTC cycle; one target per station-day. Missing calendar days remain gaps. Model family and tree counts were selected using 2025 validation.",
+    )
+    return "figure_04_chronological_comparison", _save(
+        fig,
+        paths.root / "figures",
+        "figure_04_chronological_comparison",
+    )
+
+
+def _plot_all_station_test_atlas(
+    paths: ExperimentPaths,
+) -> tuple[str, list[dict[str, Any]]]:
+    predictions = pd.read_csv(
+        paths.derived / "validation_test_predictions.csv.gz",
+        parse_dates=["target_time_utc"],
+        low_memory=False,
+    )
+    predictions = predictions.loc[
+        predictions.split.eq("test")
+        & predictions.forecast_hour.isin([6, 24, 72])
+    ].copy()
+    station_order = (
+        predictions[["station_code", "station_name"]]
+        .drop_duplicates()
+        .sort_values(["station_name", "station_code"])
+    )
+    output = paths.root / "figures" / "supplement_all_station_test_timeseries.pdf"
+    page_count = 0
+    with PdfPages(output, metadata={"Title": "All-station PM2.5 test time-series atlas"}) as pdf:
+        for page_start in range(0, len(station_order), 3):
+            page_stations = station_order.iloc[page_start : page_start + 3]
+            fig, axes = plt.subplots(
+                nrows=len(page_stations),
+                ncols=3,
+                figsize=(11.69, 8.27),
+                squeeze=False,
+                sharex=True,
+            )
+            fig.subplots_adjust(left=0.07, right=0.985, top=0.84, bottom=0.10, hspace=0.45, wspace=0.25)
+            fig.suptitle(
+                "Independent-test time series show station and lead-specific behaviour",
+                x=0.07,
+                y=0.96,
+                ha="left",
+                fontsize=15,
+                weight="bold",
+            )
+            fig.text(
+                0.07,
+                0.91,
+                "Observed and forecast PM₂.₅ for 1 January–31 August 2026; shaded bands are calibrated 10th–90th percentile prediction intervals.",
+                ha="left",
+                fontsize=10,
+                color="#374151",
+            )
+            for row_index, station in enumerate(page_stations.itertuples(index=False)):
+                for column_index, horizon in enumerate((6, 24, 72)):
+                    ax = axes[row_index, column_index]
+                    data = predictions.loc[
+                        predictions.station_code.eq(station.station_code)
+                        & predictions.forecast_hour.eq(horizon)
+                    ].sort_values("target_time_utc")
+                    ax.fill_between(
+                        data.target_time_utc,
+                        data.prediction_q10,
+                        data.prediction_q90,
+                        color=COLORS["interval"],
+                        alpha=0.18,
+                        linewidth=0,
+                        label="80% interval",
+                    )
+                    ax.plot(data.target_time_utc, data.target_pm25_ug_m3, color="#111827", linewidth=1.0, label="Observed")
+                    ax.plot(data.target_time_utc, data.champion, color=COLORS["champion"], linewidth=0.95, label="Selected model")
+                    ax.plot(data.target_time_utc, data.persistence, color=COLORS["persistence"], linewidth=0.7, linestyle="--", alpha=0.8, label="Persistence")
+                    ax.set_title(f"{station.station_name} ({station.station_code}), +{horizon} h", fontsize=8.8, loc="left")
+                    ax.grid(axis="y", color="#D1D5DB", linewidth=0.45)
+                    locator = AutoDateLocator(minticks=3, maxticks=5)
+                    ax.xaxis.set_major_locator(locator)
+                    ax.xaxis.set_major_formatter(ConciseDateFormatter(locator))
+                    if column_index == 0:
+                        ax.set_ylabel("PM₂.₅ (µg m⁻³)")
+            handles, labels = axes[0, 0].get_legend_handles_labels()
+            fig.legend(handles, labels, frameon=False, ncol=4, loc="upper right", bbox_to_anchor=(0.98, 0.895))
+            fig.text(
+                0.07,
+                0.035,
+                "One 00 UTC forecast target per station-day. Lines are unsmoothed; missing values are not interpolated. Forecasts are from the validation-selected model on the untouched 2026 test period.",
+                fontsize=8,
+                color="#4B5563",
+            )
+            pdf.savefig(fig)
+            plt.close(fig)
+            page_count += 1
+    return "supplement_all_station_test_timeseries", [
+        {
+            "path": str(output.relative_to(paths.root)),
+            "bytes": output.stat().st_size,
+            "sha256": file_sha256(output),
+            "pages": page_count,
+            "stations": len(station_order),
+        }
+    ]
+
+
 def _plot_intervals(paths: ExperimentPaths) -> tuple[str, list[dict[str, Any]]]:
     intervals = pd.read_csv(paths.tables / "prediction_interval_metrics.csv")
     test = intervals.loc[intervals.split.eq("test")].sort_values("forecast_hour")
@@ -457,12 +662,14 @@ def make_all_figures(paths: ExperimentPaths | None = None) -> dict[str, Any]:
         _plot_data_quality,
         _plot_performance,
         _plot_station_skill,
+        _plot_chronological_comparison,
         _plot_observed_predicted,
         _plot_intervals,
         _plot_events,
         _plot_importance,
         _plot_transfer,
         _plot_residuals,
+        _plot_all_station_test_atlas,
     ]
     records = []
     for maker in makers:
@@ -475,4 +682,7 @@ def make_all_figures(paths: ExperimentPaths | None = None) -> dict[str, Any]:
         "style": "colorblind-aware restrained scientific chart standard",
     }
     write_json(paths.provenance / "figure_manifest.json", manifest)
-    return {"figures": len(records), "files": 2 * len(records)}
+    return {
+        "figures": len(records),
+        "files": sum(len(record["outputs"]) for record in records),
+    }

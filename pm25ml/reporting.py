@@ -138,6 +138,22 @@ def _report_evidence(paths: ExperimentPaths) -> dict[str, Any]:
     operational_metadata = (
         _json(operational_metadata_paths[-1]) if operational_metadata_paths else {}
     )
+    training_oof_metrics = pd.read_csv(paths.tables / "training_oof_metrics.csv")
+    training_oof_runtime = pd.read_csv(paths.tables / "training_oof_runtime.csv")
+    shadow_state_path = paths.root / "shadow" / "state" / "first_successful_run.json"
+    if not shadow_state_path.exists():
+        shadow_state_path = paths.root / "shadow" / "state" / "latest_run.json"
+    shadow_state = _json(shadow_state_path) if shadow_state_path.exists() else {}
+    shadow_metadata_paths = sorted((paths.root / "shadow" / "forecasts").glob("*.json"))
+    shadow_metadata = _json(shadow_metadata_paths[-1]) if shadow_metadata_paths else {}
+    shadow_forecast_paths = sorted((paths.root / "shadow" / "forecasts").glob("*.csv"))
+    shadow_generation_lag_hours = None
+    if shadow_forecast_paths:
+        shadow_forecast = pd.read_csv(shadow_forecast_paths[-1])
+        if "availability_lag_hours" in shadow_forecast:
+            shadow_generation_lag_hours = float(
+                shadow_forecast.availability_lag_hours.median()
+            )
 
     champion = str(research["champion"])
     champion_label = {
@@ -200,6 +216,11 @@ def _report_evidence(paths: ExperimentPaths) -> dict[str, Any]:
         "cams_increment": cams_increment,
         "cams_acquisition_runtime": cams_acquisition_runtime,
         "operational_metadata": operational_metadata,
+        "training_oof_metrics": training_oof_metrics,
+        "training_oof_runtime": training_oof_runtime,
+        "shadow_state": shadow_state,
+        "shadow_metadata": shadow_metadata,
+        "shadow_generation_lag_hours": shadow_generation_lag_hours,
     }
 
 
@@ -503,31 +524,41 @@ The selected model's validation criterion is **{float(selection.mean_station_bal
 
 {_markdown_table(test_headers, test_rows)}
 
-### 4.1 Incremental value of CAMS
+{_figure_markdown(2, 'figure_02_test_performance', 'Station-balanced test MAE by lead for all candidates and reference forecasts.')}
+
+{_figure_markdown(3, 'figure_03_station_skill', 'Selected-model MAE skill relative to persistence for every station and lead.')}
+
+### 4.1 Chronological behaviour across development stages
+
+Aggregate errors do not show whether the forecast follows the timing of individual episodes, reacts late, or compresses peaks. Figure 4 therefore compares the observed and predicted +24 h sequences in their original target-time order. For readability, each point is the daily median across stations with valid data; no temporal smoothing or interpolation is applied.
+
+Training-period values are not fitted predictions. They use three expanding-window assessment blocks: July–December 2023, January–June 2024, and July–December 2024. Every assessment target is later than all targets used to fit its fold. However, the displayed model family and tree counts were selected later using 2025 validation, so this retrospective out-of-fold diagnostic describes temporal behaviour and must not be treated as an independent model-selection score. The 2025 panel is validation evidence and the 2026 panel remains the independent test.
+
+{_figure_markdown(4, 'figure_04_chronological_comparison', 'Chronological observed, selected-model, and persistence PM₂.₅ at +24 h for expanding-window out-of-fold training assessments, validation, and independent testing. Values are daily station medians for the 00 UTC forecast cycle.')}
+
+An accompanying [nine-page station atlas](../figures/supplement_all_station_test_timeseries.pdf) shows the complete independent-test sequences at +6, +24, and +72 h for all 27 stations, including the calibrated 10th–90th percentile interval. It is supplied as a separate vector PDF so poor-performing stations and short-lived episodes remain inspectable rather than being concealed by national aggregation.
+
+### 4.2 Incremental value of CAMS
 
 Relative to the otherwise identical observation-only LightGBM, adding forecast-valid CAMS PM₂.₅ reduced station-week-balanced MAE by **{increment_validation.cams_mae_improvement_over_obs_ml_ug_m3:.3f} µg m⁻³** in validation (95% bootstrap interval {increment_validation.ci95_lower_ug_m3:.3f} to {increment_validation.ci95_upper_ug_m3:.3f}) and **{increment_test.cams_mae_improvement_over_obs_ml_ug_m3:.3f} µg m⁻³** in the independent test (95% interval {increment_test.ci95_lower_ug_m3:.3f} to {increment_test.ci95_upper_ug_m3:.3f}). This is an aggregate predictive association, not causal evidence. Test-period gains are clearest at +3 to +12 h; intervals cross zero at each of +24, +48, and +72 h, so longer-lead incremental benefit remains inconclusive individually.
 
 {_markdown_table(cams_increment_headers, cams_increment_rows)}
 
-{_figure_markdown(2, 'figure_02_test_performance', 'Station-balanced test MAE by lead for all candidates and reference forecasts.')}
-
-{_figure_markdown(3, 'figure_03_station_skill', 'Selected-model MAE skill relative to persistence for every station and lead.')}
-
 The five least favourable station–lead combinations include {worst_text}. These are failure modes for investigation, not grounds for deleting observations or selectively omitting stations.
 
-{_figure_markdown(4, 'figure_04_observed_vs_predicted', 'Observed versus selected-model PM₂.₅ at +24 h and +72 h. The display is truncated at the pooled 99.5th percentile only for visual legibility; metrics use the full valid range.')}
+{_figure_markdown(5, 'figure_04_observed_vs_predicted', 'Observed versus selected-model PM₂.₅ at +24 h and +72 h. The display is truncated at the pooled 99.5th percentile only for visual legibility; metrics use the full valid range.')}
 
 ## 5. Uncertainty and high-concentration performance
 
 {_markdown_table(interval_headers, interval_rows)}
 
-{_figure_markdown(5, 'figure_05_prediction_intervals', 'Independent empirical coverage and mean width of the nominal 80% intervals.')}
+{_figure_markdown(6, 'figure_05_prediction_intervals', 'Independent empirical coverage and mean width of the nominal 80% intervals.')}
 
 High-concentration events are defined separately for each station and lead using the station's training-period 90th percentile. This makes the test threshold independent of test outcomes while avoiding an arbitrary network-wide concentration cutoff. Probability of detection (POD) is the fraction of observed events detected; false-alarm ratio (FAR) is the fraction of predicted events that did not occur; critical success index (CSI) penalizes both misses and false alarms.
 
 {_markdown_table(event_headers, event_rows)}
 
-{_figure_markdown(6, 'figure_06_high_event_detection', 'High-concentration event performance on the independent test period.')}
+{_figure_markdown(7, 'figure_06_high_event_detection', 'High-concentration event performance on the independent test period.')}
 
 ## 6. Robustness, spatial transfer, and interpretation
 
@@ -543,9 +574,9 @@ The 2024-only training sensitivity holds model form and tree counts fixed, chang
 
 Distribution-shift diagnostics compare predictor missingness, standardized mean differences, and population stability index between training and test. These statistics identify monitoring candidates; they do not by themselves establish that a shift caused an error. Residual bias is also stratified by station, target month, and local target hour.
 
-{_figure_markdown(7, 'figure_07_feature_importance', 'Mean fitted-tree feature importance for the selected model. Correlated predictors can exchange importance.')}
+{_figure_markdown(9, 'figure_07_feature_importance', 'Mean fitted-tree feature importance for the selected model. Correlated predictors can exchange importance.')}
 
-{_figure_markdown(9, 'figure_09_residual_bias', 'Selected-model mean residual by target month and lead.')}
+{_figure_markdown(10, 'figure_09_residual_bias', 'Selected-model mean residual by target month and lead.')}
 
 ## 7. Computational requirements and operational design
 
@@ -555,18 +586,27 @@ For a routine 00 UTC run, a practical allocation is **4–8 CPU cores, 4 GiB RAM
 
 The operational command reads prepared issue-time features and forecast-valid CAMS values, writes one row per station and lead, and records a model-manifest checksum. Deployment point models are refitted through December 2025; deployment quantile models stop at June 2025 so July–December remains a held calibration block. If CAMS PM₂.₅ is missing, a separately fitted observation-only point forecast is used and the status is marked degraded; calibrated intervals are withheld. Observation older than six hours is explicitly flagged. This fallback supports continuity but must not be presented as equivalent quality.
 
-Recommended shadow workflow:
+### 7.1 Implemented daily shadow workflow
+
+The non-public shadow workflow is scheduled daily at 17:15 WIB (10:15 UTC). It saves an immutable BMKG dashboard snapshot, freezes the observation cutoff, acquires the current CAMS 00 UTC initialization directly from the Copernicus archive, writes atomic forecasts with hashes and freshness/status fields, and scores them only after observations appear. It retains first-seen station-hour values for verification and preserves later raw snapshots so revisions remain auditable. There is no public upload.
+
+The first end-to-end engineering run on 4 September 2026 generated **{evidence['shadow_state'].get('forecast_rows', 'NA')} rows in {_number(evidence['shadow_state'].get('elapsed_seconds'), 1)} s** with **{evidence['shadow_metadata'].get('degraded_rows', 'NA')} degraded rows**. It produced **{evidence['shadow_metadata'].get('prospective_rows', 'NA')} prospectively eligible rows** and labelled **{evidence['shadow_metadata'].get('late_rows', 'NA')} rows** whose target times had already occurred. This first execution is a workflow test, not a prospective performance result.
+
+That engineering run completed **{_number(evidence['shadow_generation_lag_hours'], 1)} h after the 00 UTC initialization**. Observation freshness in the shadow output is therefore evaluated relative to actual generation time as well as model initialization; otherwise an observation timestamped at 00 UTC would be incorrectly described as fresh roughly eleven hours later.
+
+The operational sequence is:
 
 1. Retrieve and validate the 00 UTC CAMS forecast after publication.
 2. Freeze the latest observation cutoff and record station freshness.
 3. Construct predictors without accessing any later observation.
 4. Produce forecasts, intervals, status flags, hashes, and logs.
 5. Score forecasts when observations arrive; retain missing cases rather than backfilling them silently.
-6. Alert on missing CAMS, stale station data, schema/version changes, extreme residuals, and interval undercoverage.
+6. Record warnings for missing CAMS, stale station data, schema/version changes, degraded operation, extreme residuals, and interval undercoverage.
 
 ## 8. Limitations and readiness gates
 
 - The model has been retrospectively tested at one daily cycle only. It is not evidence for 12 UTC or arbitrary issue times.
+- Direct CAMS availability is later than model initialization. At the installed schedule, +3 h and +6 h are latency diagnostics rather than prospective forecasts; +12 h is eligible only if generation completes before 12 UTC. Prospective reporting uses the stored per-row eligibility flag.
 - The test period covers eight months of 2026, not a complete annual cycle, and no prospective shadow period has yet been observed.
 - CAMS has a much coarser footprint than a station and its forecasting system can change over time; a sampled grid value is not a station measurement.
 - The CAMS mirror is 99.54% complete for the specified station–issue–lead grid; missing cycles are excluded from primary complete-case comparisons and require the declared degraded fallback in operations.
@@ -719,26 +759,35 @@ The selected model's validation criterion is \textbf{{{float(selection.mean_stat
 
 {_tex_table(test_headers, test_rows, 'rrrrrrrrrl')}
 
+{_figure_tex(2, 'figure_02_test_performance', 'Station-balanced test MAE by lead for all candidates and reference forecasts.')}
+{_figure_tex(3, 'figure_03_station_skill', 'Selected-model MAE skill relative to persistence for every station and lead.')}
+
+\subsection{{Chronological behaviour across development stages}}
+Aggregate errors do not show whether the forecast follows episode timing, reacts late, or compresses peaks. Figure~4 therefore compares observed and predicted +24~h sequences in target-time order. Each point is the daily median across stations with valid data; no temporal smoothing or interpolation is applied.
+
+Training-period values are not fitted predictions. They use expanding-window assessment blocks for July--December 2023, January--June 2024, and July--December 2024. Every assessment target is later than all targets used to fit its fold. The displayed model family and tree counts were selected later using 2025 validation, so this retrospective out-of-fold diagnostic describes temporal behaviour and is not an independent model-selection score. The 2025 panel is validation evidence and the 2026 panel remains the independent test.
+
+{_figure_tex(4, 'figure_04_chronological_comparison', 'Chronological observed, selected-model, and persistence PM2.5 at +24 h for expanding-window out-of-fold training assessments, validation, and independent testing. Values are daily station medians for the 00 UTC forecast cycle.')}
+
+An accompanying nine-page station atlas shows the complete independent-test sequences at +6, +24, and +72~h for all 27 stations, including calibrated 10th--90th percentile intervals. It is supplied separately as a vector PDF so poor-performing stations and short-lived episodes remain inspectable rather than concealed by national aggregation.
+
 \subsection{{Incremental value of CAMS}}
 Relative to the otherwise identical observation-only LightGBM, adding forecast-valid CAMS PM\textsubscript{{2.5}} reduced station-week-balanced MAE by \textbf{{{increment_validation.cams_mae_improvement_over_obs_ml_ug_m3:.3f}~µg~m\textsuperscript{{-3}}}} in validation (95\% bootstrap interval {increment_validation.ci95_lower_ug_m3:.3f} to {increment_validation.ci95_upper_ug_m3:.3f}) and \textbf{{{increment_test.cams_mae_improvement_over_obs_ml_ug_m3:.3f}~µg~m\textsuperscript{{-3}}}} in the independent test (95\% interval {increment_test.ci95_lower_ug_m3:.3f} to {increment_test.ci95_upper_ug_m3:.3f}). This is an aggregate predictive association, not causal evidence. Test-period gains are clearest at +3 to +12~h; intervals cross zero at each of +24, +48, and +72~h, so longer-lead incremental benefit remains inconclusive individually.
 
 {_tex_table(cams_increment_headers, cams_increment_rows, 'lrrrr')}
 
-{_figure_tex(2, 'figure_02_test_performance', 'Station-balanced test MAE by lead for all candidates and reference forecasts.')}
-{_figure_tex(3, 'figure_03_station_skill', 'Selected-model MAE skill relative to persistence for every station and lead.')}
-
 The five least favourable station--lead combinations include {worst_text}. These are failure modes for investigation, not grounds for deleting observations or selectively omitting stations.
 
-{_figure_tex(4, 'figure_04_observed_vs_predicted', 'Observed versus selected-model PM2.5 at +24 h and +72 h. Display axes are limited to the pooled 99.5th percentile for legibility; metrics use the full valid range.')}
+{_figure_tex(5, 'figure_04_observed_vs_predicted', 'Observed versus selected-model PM2.5 at +24 h and +72 h. Display axes are limited to the pooled 99.5th percentile for legibility; metrics use the full valid range.')}
 
 \section{{Uncertainty and high-concentration performance}}
 {_tex_table(interval_headers, interval_rows, 'rrrrr')}
-{_figure_tex(5, 'figure_05_prediction_intervals', 'Independent empirical coverage and mean width of the nominal 80 percent intervals.')}
+{_figure_tex(6, 'figure_05_prediction_intervals', 'Independent empirical coverage and mean width of the nominal 80 percent intervals.')}
 
 High-concentration events are defined separately for each station and lead using the station's training-period 90th percentile. Probability of detection (POD) is the fraction of observed events detected; false-alarm ratio (FAR) is the fraction of predicted events that did not occur; critical success index (CSI) penalizes misses and false alarms.
 
 {_tex_table(event_headers, event_rows, 'rrrrrrr')}
-{_figure_tex(6, 'figure_06_high_event_detection', 'High-concentration event performance on the independent test period.')}
+{_figure_tex(7, 'figure_06_high_event_detection', 'High-concentration event performance on the independent test period.')}
 
 \section{{Robustness, spatial transfer, and interpretation}}
 The same-network test estimates performance for stations represented in training. Five station folds provide a separate transfer diagnostic: each held station is tested with a model fitted to the remaining stations and without station identity. Fold assignment is independent of target values.
@@ -752,8 +801,8 @@ The 2024-only training sensitivity holds model form and tree counts fixed, chang
 
 Distribution-shift diagnostics compare predictor missingness, standardized mean differences, and population stability index between training and test. These statistics identify monitoring candidates; they do not establish that a shift caused an error. Residual bias is stratified by station, target month, and local target hour.
 
-{_figure_tex(7, 'figure_07_feature_importance', 'Mean fitted-tree feature importance for the selected model. Correlated predictors can exchange importance.')}
-{_figure_tex(9, 'figure_09_residual_bias', 'Selected-model mean residual by target month and lead.')}
+{_figure_tex(9, 'figure_07_feature_importance', 'Mean fitted-tree feature importance for the selected model. Correlated predictors can exchange importance.')}
+{_figure_tex(10, 'figure_09_residual_bias', 'Selected-model mean residual by target month and lead.')}
 
 \section{{Computational requirements and operational design}}
 The experiment is designed for a CPU workstation; no GPU is required. Training uses at most 8 CPU threads. Measured peak memory was \textbf{{{_tex_escape(peak_text)}}}. Measured preparation time was \textbf{{{_number(values['preparation_seconds'], 1)}~s}}, candidate/uncertainty/transfer evaluation was \textbf{{{_number(values['training_seconds'], 1)}~s}}, and deployment refitting was \textbf{{{values['deployment_refit_seconds']:.1f}~s}}. The complete deterministic pipeline took \textbf{{{values['deterministic_pipeline_seconds'] / 60.0:.1f}~min}} across its latest successful stage measurements. The serialized deployment bundle is \textbf{{{values['deployment_mebibytes']:.1f}~MiB}}. Warm inference across all point, fallback, and interval models totals about \textbf{{{values['inference_median_seconds']:.3f}~s}}, excluding model loading, input download, and feature preparation. The measured prepared-input end-to-end command took \textbf{{{_number(values['operational_elapsed_seconds'], 2)}~s}} for 162 station--lead rows.
@@ -762,19 +811,26 @@ For a routine 00 UTC run, a practical allocation is \textbf{{4--8 CPU cores, 4~G
 
 Deployment point models are refitted through December 2025; deployment quantile models stop at June 2025 so July--December remains a held calibration block. If CAMS PM\textsubscript{{2.5}} is missing, a separately fitted observation-only point forecast is used and the status is marked degraded; calibrated intervals are withheld. Observation older than six hours is explicitly flagged. This fallback supports continuity but must not be presented as equivalent quality.
 
-\subsection{{Recommended shadow workflow}}
+\subsection{{Implemented daily shadow workflow}}
+The non-public shadow workflow is scheduled daily at 17:15 WIB (10:15 UTC). It saves an immutable BMKG dashboard snapshot, freezes the observation cutoff, acquires the current CAMS 00 UTC initialization directly from the Copernicus archive, writes atomic forecasts with hashes and freshness/status fields, and scores them only after observations appear. First-seen station-hour values are retained for verification and later raw snapshots preserve revisions. There is no public upload.
+
+The first end-to-end engineering run on 4 September 2026 generated \textbf{{{evidence['shadow_state'].get('forecast_rows', 'NA')} rows in {_number(evidence['shadow_state'].get('elapsed_seconds'), 1)}~s}} with \textbf{{{evidence['shadow_metadata'].get('degraded_rows', 'NA')} degraded rows}}. It produced \textbf{{{evidence['shadow_metadata'].get('prospective_rows', 'NA')} prospectively eligible rows}} and labelled \textbf{{{evidence['shadow_metadata'].get('late_rows', 'NA')} rows}} whose target times had already occurred. This first execution is a workflow test, not a prospective performance result.
+
+That engineering run completed \textbf{{{_number(evidence['shadow_generation_lag_hours'], 1)}~h after the 00 UTC initialization}}. Observation freshness in shadow output is evaluated relative to actual generation time as well as model initialization; otherwise an observation timestamped at 00 UTC would be incorrectly described as fresh about eleven hours later.
+
 \begin{{enumerate}}
 \item Retrieve and validate the 00 UTC CAMS forecast after publication.
 \item Freeze the latest observation cutoff and record station freshness.
 \item Construct predictors without accessing later observations.
 \item Produce forecasts, intervals, status flags, hashes, and logs.
 \item Score forecasts when observations arrive; retain missing cases rather than silently backfilling.
-\item Alert on missing CAMS, stale station data, schema/version changes, extreme residuals, and interval undercoverage.
+\item Record warnings for missing CAMS, stale station data, schema/version changes, degraded operation, extreme residuals, and interval undercoverage.
 \end{{enumerate}}
 
 \section{{Limitations and readiness gates}}
 \begin{{itemize}}
 \item One daily cycle was retrospectively tested; this is not evidence for 12 UTC or arbitrary issue times.
+\item Direct CAMS availability is later than model initialization. At the installed schedule, +3~h and +6~h are latency diagnostics rather than prospective forecasts; +12~h is eligible only if generation completes before 12~UTC. Prospective reporting uses the stored per-row eligibility flag.
 \item The test covers eight months of 2026, not a complete annual cycle, and no prospective shadow period has yet been observed.
 \item CAMS is much coarser than a station and its forecast system can change; a sampled grid value is not a station measurement.
 \item The CAMS mirror is 99.54\% complete for the specified station--issue--lead grid; missing cycles are excluded from primary complete-case comparisons and require the declared degraded fallback in operations.

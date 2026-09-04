@@ -11,7 +11,7 @@
         {
           "bytes": 34026,
           "path": "figures/figure_01_observation_coverage.svg",
-          "sha256": "d2059a78f0adfa7f29d9ed56978fc35d09b8c7c4ad3544e3097c4c07b85c3598"
+          "sha256": "873b385c5747f91835c3db4960477d2838d17ba5b00e8e874c42333b6f3c1eaa"
         }
       ]
     },
@@ -26,7 +26,7 @@
         {
           "bytes": 22227,
           "path": "figures/figure_02_test_performance.svg",
-          "sha256": "ed7a4f097952aa21fae6101a03617bf1476610491c55a525e90aa471ec5b7262"
+          "sha256": "5e3168c9013513651aa76da53db750080179b70f52caac091b8416c2946ad78f"
         }
       ]
     },
@@ -41,7 +41,22 @@
         {
           "bytes": 25322,
           "path": "figures/figure_03_station_skill.svg",
-          "sha256": "b34bf638c4133676490a78c61a6f5be842eeed24aaafdbc7ee514ed3a1ae7ce6"
+          "sha256": "a61de124e0d15d2385892d70095d26026d7ff65fc134ba9abc0ba911e0d827a7"
+        }
+      ]
+    },
+    {
+      "figure": "figure_04_chronological_comparison",
+      "outputs": [
+        {
+          "bytes": 673188,
+          "path": "figures/figure_04_chronological_comparison.png",
+          "sha256": "53a9021807cf92c6e81536559b4ca0f4842b9d4bcc26d2b7ba551c1973f2101d"
+        },
+        {
+          "bytes": 102234,
+          "path": "figures/figure_04_chronological_comparison.svg",
+          "sha256": "6ef53397bcbbbf4a40dfadf813408fba6a5446a9b7fc9cc43d6a7b2c31e9cacf"
         }
       ]
     },
@@ -56,7 +71,7 @@
         {
           "bytes": 190676,
           "path": "figures/figure_04_observed_vs_predicted.svg",
-          "sha256": "931a18cad281179e037f3b13793649ba87ee9ad8205c4a3d292840ae315280fd"
+          "sha256": "67f48028e2e6b820df846a5a8c87f4564c8a9c14c8230c117761fcb648c40689"
         }
       ]
     },
@@ -71,7 +86,7 @@
         {
           "bytes": 22147,
           "path": "figures/figure_05_prediction_intervals.svg",
-          "sha256": "e13c2856cdba135b9e7c9ca07fd6656cf0902b83221d2f7c2334a6c135a9dde6"
+          "sha256": "999dca0a79abaea55c4a44e05806c63a6fc09a1312e05abf4b6fa5a6cce2d5e8"
         }
       ]
     },
@@ -86,7 +101,7 @@
         {
           "bytes": 15503,
           "path": "figures/figure_06_high_event_detection.svg",
-          "sha256": "4228b260ac38d3bd154af7d408e62dfacaa06ab50ef60c6a61cc9e2d2bd8f181"
+          "sha256": "fc4a0469a801d46255bacecae947a1f8c066724399989d7badcc8fba2e72ed2b"
         }
       ]
     },
@@ -101,7 +116,7 @@
         {
           "bytes": 15535,
           "path": "figures/figure_07_feature_importance.svg",
-          "sha256": "2fc4b39471ec423cfce4747a20f258429cf3f806509102154837130378f71818"
+          "sha256": "980ebd55f0ea1b5f596f260f40f404c636d7de0e61806cf977b1dc8783fe31bc"
         }
       ]
     },
@@ -116,7 +131,7 @@
         {
           "bytes": 19288,
           "path": "figures/figure_08_station_transfer.svg",
-          "sha256": "6be5fed24d1a50caf13531f36e18b317e03778107cbf95958908885493a0ab02"
+          "sha256": "af90812e54536e9f335187d4e8c4ad907593e43e32f846e4e2a5c70996a12de0"
         }
       ]
     },
@@ -131,12 +146,24 @@
         {
           "bytes": 15112,
           "path": "figures/figure_09_residual_bias.svg",
-          "sha256": "96d741e82cfbd98e16d55562a055ac9e6c76d5c2e7cc5e0d6d7f762cde3edf93"
+          "sha256": "feb89e81b883f6e1a833b0e96eef6fe07254dd0c7043cc78d886d94e3ae91784"
+        }
+      ]
+    },
+    {
+      "figure": "supplement_all_station_test_timeseries",
+      "outputs": [
+        {
+          "bytes": 768270,
+          "pages": 9,
+          "path": "figures/supplement_all_station_test_timeseries.pdf",
+          "sha256": "4c5bc557bd4ee138b33f5d665c6e3da1788250ef34059c8491d4e268b97a9fa3",
+          "stations": 27
         }
       ]
     }
   ],
   "format": "SVG plus 300 dpi PNG",
-  "generated_utc": "2026-09-04T10:57:30.244494+00:00",
+  "generated_utc": "2026-09-04T11:17:55.434065+00:00",
   "style": "colorblind-aware restrained scientific chart standard"
 }

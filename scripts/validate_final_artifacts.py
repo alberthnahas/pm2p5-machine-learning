@@ -245,6 +245,34 @@ def main() -> None:
         bool(ordered.all()),
         {"checked_rows": len(intervals), "violations": int((~ordered).sum())},
     )
+    training_oof = pd.read_csv(
+        ROOT / "data" / "derived" / "training_oof_predictions.csv.gz",
+        parse_dates=[
+            "target_time_utc",
+            "oof_training_target_end_utc",
+            "oof_assessment_start_utc",
+            "oof_assessment_end_utc",
+        ],
+        low_memory=False,
+    )
+    oof_temporal_order = training_oof.oof_training_target_end_utc.lt(
+        training_oof.oof_assessment_start_utc
+    ) & training_oof.target_time_utc.between(
+        training_oof.oof_assessment_start_utc,
+        training_oof.oof_assessment_end_utc,
+        inclusive="both",
+    )
+    check(
+        "expanding-window training predictions are out of fold in time",
+        bool(oof_temporal_order.all())
+        and training_oof.oof_fold.nunique() == 3
+        and set(training_oof.forecast_hour) == set(config["forecast_hours"]),
+        {
+            "rows": len(training_oof),
+            "folds": int(training_oof.oof_fold.nunique()),
+            "temporal_order_violations": int((~oof_temporal_order).sum()),
+        },
+    )
     incremental = pd.read_csv(
         ROOT / "tables" / "cams_incremental_skill_vs_observation_ml.csv",
         dtype={"forecast_hour": str},
@@ -313,7 +341,7 @@ def main() -> None:
                     png_dimensions[figure["figure"]] = list(image.size)
     check(
         "figure inventory and checksums",
-        len(figure_manifest["figures"]) == 9 and not figure_mismatches,
+        len(figure_manifest["figures"]) == 11 and not figure_mismatches,
         {
             "figures": len(figure_manifest["figures"]),
             "mismatches": figure_mismatches,

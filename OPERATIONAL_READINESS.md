@@ -1,8 +1,9 @@
 # Operational readiness checklist
 
-Status: **pre-operational / shadow-mode candidate**
+Status: **pre-operational / scheduled shadow mode**
 
-No scheduler, upload, or public product is configured by this experiment.
+A local daily scheduler is configured for non-public shadow forecasts and
+delayed verification. No upload or public product is configured.
 
 ## Completed research controls
 
@@ -33,18 +34,17 @@ No scheduler, upload, or public product is configured by this experiment.
 
 ## Required before shadow scheduling
 
-- [ ] Define the exact observation-arrival cutoff and simulate realistic data
-  latency, including late or revised station records.
-- [ ] Implement a current-cycle CAMS downloader with bounded retries, timeout,
-  schema/version checks, and an explicit no-data exit status.
-- [ ] Add idempotent run identifiers, structured logs, atomic publication, and
-  retention rules in the intended host environment.
-- [ ] Connect forecast verification to observations only after their arrival;
-  never use revised future records during issue-time feature construction.
+- [x] Define the observation snapshot cutoff and record realized generation
+  latency, including targets already reached before generation.
+- [x] Implement a current-cycle direct CAMS downloader with three bounded
+  attempts, archive/schema/unit checks, and an explicit degraded fallback.
+- [x] Add idempotent run identifiers, structured logs, atomic local output, and
+  indefinite evidence retention during the initial evaluation.
+- [x] Connect forecast verification to observations only after their arrival;
+  retain first-seen station-hour values and every immutable raw snapshot.
 - [ ] Define alert owners and thresholds for input freshness, station coverage,
   range/schema changes, inference failure, and degraded fallback frequency.
-- [ ] Exercise restart, partial-input, and rollback procedures on the intended
-  operational machine.
+- [x] Exercise idempotent restart and partial CAMS-input fallback locally.
 
 ## Required before duty-forecaster or public use
 
@@ -65,7 +65,8 @@ No scheduler, upload, or public product is configured by this experiment.
 
 ## Proposed run-time service levels
 
-- Scheduled cycle: 00 UTC only until another cycle is independently tested.
+- Scheduled cycle: the 00 UTC CAMS initialization, run daily at 17:15 WIB;
+  realized generation latency and prospective eligibility are stored per row.
 - Compute allocation: 4–8 CPU cores, 4 GiB RAM, 2 GiB working storage; no GPU.
 - Model inference target: under 1 minute for 27 stations × 6 leads.
 - Measured warm model-prediction total: approximately 0.13 seconds; measured

@@ -128,3 +128,7 @@ uses only information available at its issue time.
 - [x] Execute the notebook top-to-bottom without cell errors.
 - [x] Build and validate Markdown, LaTeX, and 14-page A4 PDF reports.
 - [x] Benchmark operational inference and complete final artifact validation.
+- [x] Add expanding-window training, validation, and independent-test
+  chronological comparisons plus an all-station test atlas.
+- [x] Implement and schedule the non-public daily shadow acquisition,
+  forecast, first-arrival verification, and structured health logging workflow.

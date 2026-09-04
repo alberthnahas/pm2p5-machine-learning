@@ -68,7 +68,27 @@ The selected model's validation criterion is **7.12 µg m⁻³**. The following 
 | +48 | 5,839 | 11.66 | 13.90 | 18.10 | 16.9 | 21.39 | -4.41 | 0.59 | [0.99, 3.10] |
 | +72 | 5,832 | 12.03 | 14.68 | 18.55 | 19.2 | 21.83 | -4.45 | 0.57 | [1.16, 3.50] |
 
-### 4.1 Incremental value of CAMS
+![Figure 2. Station-balanced test MAE by lead for all candidates and reference forecasts.](../figures/figure_02_test_performance.png)
+
+*Figure 2. Station-balanced test MAE by lead for all candidates and reference forecasts.*
+
+![Figure 3. Selected-model MAE skill relative to persistence for every station and lead.](../figures/figure_03_station_skill.png)
+
+*Figure 3. Selected-model MAE skill relative to persistence for every station and lead.*
+
+### 4.1 Chronological behaviour across development stages
+
+Aggregate errors do not show whether the forecast follows the timing of individual episodes, reacts late, or compresses peaks. Figure 4 therefore compares the observed and predicted +24 h sequences in their original target-time order. For readability, each point is the daily median across stations with valid data; no temporal smoothing or interpolation is applied.
+
+Training-period values are not fitted predictions. They use three expanding-window assessment blocks: July–December 2023, January–June 2024, and July–December 2024. Every assessment target is later than all targets used to fit its fold. However, the displayed model family and tree counts were selected later using 2025 validation, so this retrospective out-of-fold diagnostic describes temporal behaviour and must not be treated as an independent model-selection score. The 2025 panel is validation evidence and the 2026 panel remains the independent test.
+
+![Figure 4. Chronological observed, selected-model, and persistence PM₂.₅ at +24 h for expanding-window out-of-fold training assessments, validation, and independent testing. Values are daily station medians for the 00 UTC forecast cycle.](../figures/figure_04_chronological_comparison.png)
+
+*Figure 4. Chronological observed, selected-model, and persistence PM₂.₅ at +24 h for expanding-window out-of-fold training assessments, validation, and independent testing. Values are daily station medians for the 00 UTC forecast cycle.*
+
+An accompanying [nine-page station atlas](../figures/supplement_all_station_test_timeseries.pdf) shows the complete independent-test sequences at +6, +24, and +72 h for all 27 stations, including the calibrated 10th–90th percentile interval. It is supplied as a separate vector PDF so poor-performing stations and short-lived episodes remain inspectable rather than being concealed by national aggregation.
+
+### 4.2 Incremental value of CAMS
 
 Relative to the otherwise identical observation-only LightGBM, adding forecast-valid CAMS PM₂.₅ reduced station-week-balanced MAE by **0.065 µg m⁻³** in validation (95% bootstrap interval 0.034 to 0.098) and **0.178 µg m⁻³** in the independent test (95% interval 0.119 to 0.242). This is an aggregate predictive association, not causal evidence. Test-period gains are clearest at +3 to +12 h; intervals cross zero at each of +24, +48, and +72 h, so longer-lead incremental benefit remains inconclusive individually.
 
@@ -82,19 +102,11 @@ Relative to the otherwise identical observation-only LightGBM, adding forecast-v
 | +72 | 0.089 | 0.68 | [-0.033, 0.222] | 945 |
 | All leads | 0.178 | 1.65 | [0.119, 0.242] | 945 |
 
-![Figure 2. Station-balanced test MAE by lead for all candidates and reference forecasts.](../figures/figure_02_test_performance.png)
-
-*Figure 2. Station-balanced test MAE by lead for all candidates and reference forecasts.*
-
-![Figure 3. Selected-model MAE skill relative to persistence for every station and lead.](../figures/figure_03_station_skill.png)
-
-*Figure 3. Selected-model MAE skill relative to persistence for every station and lead.*
-
 The five least favourable station–lead combinations include SINTANG (-15.2%), SUPADIO (-13.1%), SUPADIO (-12.9%), SINTANG (-10.2%), SUPADIO (-9.5%). These are failure modes for investigation, not grounds for deleting observations or selectively omitting stations.
 
-![Figure 4. Observed versus selected-model PM₂.₅ at +24 h and +72 h. The display is truncated at the pooled 99.5th percentile only for visual legibility; metrics use the full valid range.](../figures/figure_04_observed_vs_predicted.png)
+![Figure 5. Observed versus selected-model PM₂.₅ at +24 h and +72 h. The display is truncated at the pooled 99.5th percentile only for visual legibility; metrics use the full valid range.](../figures/figure_04_observed_vs_predicted.png)
 
-*Figure 4. Observed versus selected-model PM₂.₅ at +24 h and +72 h. The display is truncated at the pooled 99.5th percentile only for visual legibility; metrics use the full valid range.*
+*Figure 5. Observed versus selected-model PM₂.₅ at +24 h and +72 h. The display is truncated at the pooled 99.5th percentile only for visual legibility; metrics use the full valid range.*
 
 ## 5. Uncertainty and high-concentration performance
 
@@ -107,9 +119,9 @@ The five least favourable station–lead combinations include SINTANG (-15.2%), 
 | +48 | 6,084 | 77.5 | 32.3 | 57.6 |
 | +72 | 6,084 | 77.5 | 32.5 | 60.6 |
 
-![Figure 5. Independent empirical coverage and mean width of the nominal 80% intervals.](../figures/figure_05_prediction_intervals.png)
+![Figure 6. Independent empirical coverage and mean width of the nominal 80% intervals.](../figures/figure_05_prediction_intervals.png)
 
-*Figure 5. Independent empirical coverage and mean width of the nominal 80% intervals.*
+*Figure 6. Independent empirical coverage and mean width of the nominal 80% intervals.*
 
 High-concentration events are defined separately for each station and lead using the station's training-period 90th percentile. This makes the test threshold independent of test outcomes while avoiding an arbitrary network-wide concentration cutoff. Probability of detection (POD) is the fraction of observed events detected; false-alarm ratio (FAR) is the fraction of predicted events that did not occur; critical success index (CSI) penalizes both misses and false alarms.
 
@@ -122,9 +134,9 @@ High-concentration events are defined separately for each station and lead using
 | +48 | 280 | 500 | 153 | 35.9 | 35.3 | 30.0 |
 | +72 | 252 | 528 | 154 | 32.3 | 37.9 | 27.0 |
 
-![Figure 6. High-concentration event performance on the independent test period.](../figures/figure_06_high_event_detection.png)
+![Figure 7. High-concentration event performance on the independent test period.](../figures/figure_06_high_event_detection.png)
 
-*Figure 6. High-concentration event performance on the independent test period.*
+*Figure 7. High-concentration event performance on the independent test period.*
 
 ## 6. Robustness, spatial transfer, and interpretation
 
@@ -156,13 +168,13 @@ The 2024-only training sensitivity holds model form and tree counts fixed, chang
 
 Distribution-shift diagnostics compare predictor missingness, standardized mean differences, and population stability index between training and test. These statistics identify monitoring candidates; they do not by themselves establish that a shift caused an error. Residual bias is also stratified by station, target month, and local target hour.
 
-![Figure 7. Mean fitted-tree feature importance for the selected model. Correlated predictors can exchange importance.](../figures/figure_07_feature_importance.png)
+![Figure 9. Mean fitted-tree feature importance for the selected model. Correlated predictors can exchange importance.](../figures/figure_07_feature_importance.png)
 
-*Figure 7. Mean fitted-tree feature importance for the selected model. Correlated predictors can exchange importance.*
+*Figure 9. Mean fitted-tree feature importance for the selected model. Correlated predictors can exchange importance.*
 
-![Figure 9. Selected-model mean residual by target month and lead.](../figures/figure_09_residual_bias.png)
+![Figure 10. Selected-model mean residual by target month and lead.](../figures/figure_09_residual_bias.png)
 
-*Figure 9. Selected-model mean residual by target month and lead.*
+*Figure 10. Selected-model mean residual by target month and lead.*
 
 ## 7. Computational requirements and operational design
 
@@ -172,18 +184,27 @@ For a routine 00 UTC run, a practical allocation is **4–8 CPU cores, 4 GiB RAM
 
 The operational command reads prepared issue-time features and forecast-valid CAMS values, writes one row per station and lead, and records a model-manifest checksum. Deployment point models are refitted through December 2025; deployment quantile models stop at June 2025 so July–December remains a held calibration block. If CAMS PM₂.₅ is missing, a separately fitted observation-only point forecast is used and the status is marked degraded; calibrated intervals are withheld. Observation older than six hours is explicitly flagged. This fallback supports continuity but must not be presented as equivalent quality.
 
-Recommended shadow workflow:
+### 7.1 Implemented daily shadow workflow
+
+The non-public shadow workflow is scheduled daily at 17:15 WIB (10:15 UTC). It saves an immutable BMKG dashboard snapshot, freezes the observation cutoff, acquires the current CAMS 00 UTC initialization directly from the Copernicus archive, writes atomic forecasts with hashes and freshness/status fields, and scores them only after observations appear. It retains first-seen station-hour values for verification and preserves later raw snapshots so revisions remain auditable. There is no public upload.
+
+The first end-to-end engineering run on 4 September 2026 generated **162 rows in 67.7 s** with **0 degraded rows**. It produced **108 prospectively eligible rows** and labelled **54 rows** whose target times had already occurred. This first execution is a workflow test, not a prospective performance result.
+
+That engineering run completed **11.3 h after the 00 UTC initialization**. Observation freshness in the shadow output is therefore evaluated relative to actual generation time as well as model initialization; otherwise an observation timestamped at 00 UTC would be incorrectly described as fresh roughly eleven hours later.
+
+The operational sequence is:
 
 1. Retrieve and validate the 00 UTC CAMS forecast after publication.
 2. Freeze the latest observation cutoff and record station freshness.
 3. Construct predictors without accessing any later observation.
 4. Produce forecasts, intervals, status flags, hashes, and logs.
 5. Score forecasts when observations arrive; retain missing cases rather than backfilling them silently.
-6. Alert on missing CAMS, stale station data, schema/version changes, extreme residuals, and interval undercoverage.
+6. Record warnings for missing CAMS, stale station data, schema/version changes, degraded operation, extreme residuals, and interval undercoverage.
 
 ## 8. Limitations and readiness gates
 
 - The model has been retrospectively tested at one daily cycle only. It is not evidence for 12 UTC or arbitrary issue times.
+- Direct CAMS availability is later than model initialization. At the installed schedule, +3 h and +6 h are latency diagnostics rather than prospective forecasts; +12 h is eligible only if generation completes before 12 UTC. Prospective reporting uses the stored per-row eligibility flag.
 - The test period covers eight months of 2026, not a complete annual cycle, and no prospective shadow period has yet been observed.
 - CAMS has a much coarser footprint than a station and its forecasting system can change over time; a sampled grid value is not a station measurement.
 - The CAMS mirror is 99.54% complete for the specified station–issue–lead grid; missing cycles are excluded from primary complete-case comparisons and require the declared degraded fallback in operations.

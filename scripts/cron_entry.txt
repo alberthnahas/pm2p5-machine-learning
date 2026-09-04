@@ -1,0 +1,3 @@
+# [AQ_PM25_ML_SHADOW] Non-public 00 UTC station forecast and delayed verification
+CRON_TZ=Asia/Jakarta
+15 17 * * * MPLCONFIGDIR=/tmp/matplotlib-aq /usr/bin/flock -n /tmp/aq-pm25-ml-shadow.lock /run/media/workstation-llm/HDD2/AQ/experiments/machine-learning/scripts/run_shadow_daily.sh >> /run/media/workstation-llm/HDD2/AQ/experiments/machine-learning/shadow/logs/cron.log 2>&1

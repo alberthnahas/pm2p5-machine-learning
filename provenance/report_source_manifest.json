@@ -1,13 +1,13 @@
 {
-  "generated_utc": "2026-09-04T10:57:30.927348+00:00",
+  "generated_utc": "2026-09-04T11:26:31.830690+00:00",
   "latex": {
-    "bytes": 24881,
+    "bytes": 27982,
     "path": "reports/pm25_station_cams_mos_research_to_operations.tex",
-    "sha256": "2767498906ddf7229a0311e6926d67f7c3702604aa41d9f3c02f37770161601a"
+    "sha256": "4e4dee55bd4bd2943b4d27241f0e23686628a1b7d93f216912f8288db4cf06f5"
   },
   "markdown": {
-    "bytes": 23211,
+    "bytes": 26659,
     "path": "reports/pm25_station_cams_mos_research_to_operations.md",
-    "sha256": "b83307b37b328c85a88d688d9b769eb29d1ec3fab7c23596f06da7a6d0ae249f"
+    "sha256": "0e513d47fe529f53e55d1efc5d81f2e1fef0e51be198fdef0ab7f8206def4282"
   }
 }

@@ -397,6 +397,8 @@ def run_operational_forecast(
     issue_time: str | None = None,
     output_path: Path | None = None,
     paths: ExperimentPaths | None = None,
+    issue_features_frame: pd.DataFrame | None = None,
+    cams_frame: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     """Run one restartable national station forecast from prepared inputs."""
 
@@ -408,18 +410,26 @@ def run_operational_forecast(
             encoding="utf-8"
         )
     )
-    issue_features = pd.read_csv(
-        paths.derived / "issue_time_observation_features.csv.gz",
-        parse_dates=["timestamp_utc"],
-        low_memory=False,
+    issue_features = (
+        issue_features_frame.copy()
+        if issue_features_frame is not None
+        else pd.read_csv(
+            paths.derived / "issue_time_observation_features.csv.gz",
+            parse_dates=["timestamp_utc"],
+            low_memory=False,
+        )
     )
     issue_features["timestamp_utc"] = pd.to_datetime(
         issue_features.timestamp_utc, utc=True
     )
-    cams = pd.read_csv(
-        paths.derived / "cams_station_forecasts.csv.gz",
-        parse_dates=["issue_time_utc", "valid_time_utc"],
-        low_memory=False,
+    cams = (
+        cams_frame.copy()
+        if cams_frame is not None
+        else pd.read_csv(
+            paths.derived / "cams_station_forecasts.csv.gz",
+            parse_dates=["issue_time_utc", "valid_time_utc"],
+            low_memory=False,
+        )
     )
     cams["issue_time_utc"] = pd.to_datetime(cams.issue_time_utc, utc=True)
     if issue_time is None:
@@ -532,7 +542,9 @@ def run_operational_forecast(
         f"pm25_station_forecast_{selected_issue:%Y%m%dT%H%MZ}.csv"
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    result.to_csv(output_path, index=False)
+    temporary_output = output_path.with_suffix(output_path.suffix + ".part")
+    result.to_csv(temporary_output, index=False)
+    temporary_output.replace(output_path)
     metadata = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "issue_time_utc": selected_issue.isoformat(),

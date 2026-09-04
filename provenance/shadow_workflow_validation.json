@@ -1,0 +1,44 @@
+{
+  "validated_utc": "2026-09-04T11:24:50Z",
+  "status": "pass",
+  "schedule": {
+    "timezone": "Asia/Jakarta",
+    "local_time": "17:15",
+    "cycle_initialization_utc": "00:00",
+    "cron_installed": true,
+    "lock_file": "/tmp/aq-pm25-ml-shadow.lock"
+  },
+  "first_end_to_end_run": {
+    "issue_time_utc": "2026-09-04T00:00:00Z",
+    "elapsed_seconds": 67.72515001000102,
+    "forecast_rows": 162,
+    "primary_rows": 162,
+    "degraded_rows": 0,
+    "prospectively_eligible_rows": 108,
+    "late_target_rows": 54,
+    "matched_observation_rows_at_first_check": 53,
+    "warnings": []
+  },
+  "idempotent_rerun": {
+    "status": "forecast_already_exists",
+    "elapsed_seconds": 0.38427019200025825,
+    "forecast_rows": 162,
+    "forecast_checksum_unchanged": true
+  },
+  "validation": {
+    "unit_and_integration_tests_passed": 15,
+    "final_artifact_checks_passed": 22,
+    "final_artifact_checks_failed": 0,
+    "direct_cams_archive_schema_and_units_checked": true,
+    "dashboard_station_count": 27,
+    "automatic_retraining": false,
+    "public_upload": false
+  },
+  "sha256": {
+    "shadow_module": "817e8f33862f8053c7a29e307f72c0c9262d83e07ff1d54fa0036377115be8c4",
+    "python_entrypoint": "ef40a862f7301d6baff348fb429cff06177136874e8546cd8d3e5c6e1090405d",
+    "shell_wrapper": "4f04fc41a03fdb23d534ab1274b3f6d057f95bd3b63efb1d0be25d30f7e3f06a",
+    "cron_entry_source": "f215479df4fedf9157ebe80b1f6d7af95da4939c2b4c66319433ee82c037c859"
+  },
+  "scientific_constraint": "Only rows generated before their target time are eligible for prospective skill. At 17:15 WIB, +3 h and +6 h are latency diagnostics; +12 h is eligible only if generation completes before 12 UTC."
+}
