@@ -1,0 +1,28 @@
+source_file,station_code,station_name,province,region,latitude,longitude,timezone,utc_offset_hours,coordinate_source,coordinate_source_id
+banjarbaru.csv,BANJARBARU2,Banjarbaru,South Kalimantan,Kalimantan,-3.475,114.856,WITA,8,existing_operational_config,BANJARBARU
+batam.csv,BATAM2,Batam,Riau Islands,Sumatra,1.124,104.126,WIB,7,existing_operational_config,BATAM
+bengkulu.csv,BENGKULU,Bengkulu,Bengkulu,Sumatra,-3.865,102.312,WIB,7,existing_operational_config,BENGKULU
+indrapuri.csv,INDRAPURI2,Indrapuri,Aceh,Sumatra,5.404,95.475,WIB,7,existing_operational_config,INDRAPURI
+kemayoran.csv,KEMAYORAN3,Kemayoran,DKI Jakarta,Java,-6.15559,106.84,WIB,7,bmkg_station_marker,STW1071
+kota_jambi.csv,JAMBI3,Kota Jambi,Jambi,Sumatra,-1.63,103.64,WIB,7,existing_operational_config,KOTA_JAMBI
+kotabaru.csv,KOTABARU,Kotabaru,South Kalimantan,Kalimantan,-3.3,116.17,WITA,8,existing_operational_config,KOTABARU
+kototabang.csv,KOTOTABANG2,Koto Tabang,West Sumatra,Sumatra,-0.251,100.382,WIB,7,existing_operational_config,KOTOTABANG
+kubu_raya.csv,SUPADIO,Kubu Raya,West Kalimantan,Kalimantan,-0.14,109.45,WIB,7,existing_operational_config,KUBU_RAYA
+lore_lindu.csv,PALU,Lore Lindu Bariri,Central Sulawesi,Sulawesi,-1.650042,120.183,WITA,8,bmkg_station_marker,160018
+malang.csv,MALANG,Malang,East Java,Java,-7.90136,112.597789,WIB,7,bmkg_station_marker,STI1002
+maros.csv,MAROS,Maros,South Sulawesi,Sulawesi,-4.9971196,119.5715342,WITA,8,bmkg_station_marker,STA2076
+medan.csv,MEDAN2,Medan,North Sumatra,Sumatra,3.59,98.85,WIB,7,existing_operational_config,MEDAN
+mempawah.csv,PONTIANAK2,Mempawah,West Kalimantan,Kalimantan,0.0753,109.1908,WIB,7,bmkg_upt_profile,staklim_kalbar_jongkat
+muaro_jambi.csv,JAMBI4,Muaro Jambi,Jambi,Sumatra,-1.601043,103.494413,WIB,7,existing_operational_config,MUARO_JAMBI
+musi_2_palembang.csv,PALEMBANG4,Musi 2 Palembang,South Sumatra,Sumatra,-2.94,104.7,WIB,7,existing_operational_config,MUSI_2_PALEMBANG
+palangkaraya.csv,PALANGKARAYA2,Palangka Raya,Central Kalimantan,Kalimantan,-2.22611,113.945,WIB,7,existing_operational_config,PALANGKARAYA
+pangkalanbun.csv,PANGKALANBUN2,Pangkalan Bun,Central Kalimantan,Kalimantan,-2.704,111.676,WIB,7,existing_operational_config,PANGKALANBUN
+pekanbaru.csv,PEKANBARU2,Pekanbaru,Riau,Sumatra,0.46667,101.4666,WIB,7,existing_operational_config,PEKANBARU
+pesawaran.csv,PESAWARAN,Pesawaran,Lampung,Sumatra,-5.17,105.178,WIB,7,existing_operational_config,PESAWARAN
+samarinda.csv,SAMARINDA2,Samarinda,East Kalimantan,Kalimantan,-0.4825,117.1563,WITA,8,existing_operational_config,SAMARINDA
+semarang.csv,SEMARANG,Semarang,Central Java,Java,-6.9848,110.3808,WIB,7,bmkg_station_marker,50003
+sintang.csv,SINTANG,Sintang,West Kalimantan,Kalimantan,0.066,111.477,WIB,7,existing_operational_config,SINTANG
+sleman.csv,MLATI,Sleman,DI Yogyakarta,Java,-7.731175,110.35368611,WIB,7,bmkg_station_marker,160021
+sorong.csv,SORONG,Sorong,West Papua,Papua,-0.874536,131.2677,WIT,9,bmkg_station_marker,160020
+talang_betutu_palembang.csv,PALEMBANG3,Talang Betutu Palembang,South Sumatra,Sumatra,-3.031,104.72,WIB,7,existing_operational_config,TALANG_BETUTU_PALEMBANG
+tanjung_harapan.csv,TANJUNGHARAPAN2,Tanjung Harapan,North Kalimantan,Kalimantan,2.83,117.36,WITA,8,existing_operational_config,TANJUNG_HARAPAN

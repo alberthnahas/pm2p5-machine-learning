@@ -1,0 +1,9 @@
+{
+  "measurement": "sum of per-chunk elapsed times printed during the initial live acquisition",
+  "scope": "15 Earth Engine quarterly chunks for 2023-01-01 through 2026-08-31; excludes startup and final concatenation",
+  "elapsed_seconds": 764.9653311910042,
+  "elapsed_minutes": 12.749422186516737,
+  "stations": 27,
+  "forecast_hours": [3, 6, 12, 24, 48, 72],
+  "note": "This historical backfill timing is network and service dependent; cached reruns are faster."
+}

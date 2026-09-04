@@ -1,0 +1,183 @@
+{
+  "conflicting_duplicate_keys": 0,
+  "duplicate_rows_affected": 84,
+  "duplicate_rows_removed": 42,
+  "end_utc": "2026-08-31T23:00:00+00:00",
+  "generated_utc": "2026-09-04T10:37:54.111912+00:00",
+  "invalid_relative_humidity": 674,
+  "invalid_temperature": 3662,
+  "negative_pm25": 24858,
+  "pm25_at_or_above_985": 17644,
+  "source_files": 27,
+  "source_manifest": [
+    {
+      "bytes": 2677739,
+      "path": "obs/all/banjarbaru.csv",
+      "rows": 43406,
+      "sha256": "153ad6035959e45710ecbfb7a027617ac2eea15968cb0d4eaf9aa5251b6dc1d5"
+    },
+    {
+      "bytes": 2481309,
+      "path": "obs/all/batam.csv",
+      "rows": 43203,
+      "sha256": "379fa99e871d4ee52dd0efca1872fec87f1357aea9e30e71daf3a62b2b5b9446"
+    },
+    {
+      "bytes": 2585283,
+      "path": "obs/all/bengkulu.csv",
+      "rows": 43544,
+      "sha256": "ad16895fb09192ccc4545a11490d26121d03611a338c901de484e7efb310463f"
+    },
+    {
+      "bytes": 2574730,
+      "path": "obs/all/indrapuri.csv",
+      "rows": 42279,
+      "sha256": "bab2455c46e198923ba199cfd8383bab0137eb95d0b428a7641fa5d2eb1d6536"
+    },
+    {
+      "bytes": 2668377,
+      "path": "obs/all/kemayoran.csv",
+      "rows": 43207,
+      "sha256": "8660481dc91eb4245c5981d09e88a402acd8c44aecd39c6e9e937ea9597e9890"
+    },
+    {
+      "bytes": 2705137,
+      "path": "obs/all/kota_jambi.csv",
+      "rows": 47180,
+      "sha256": "2a36322bfd9abbcb7a6c0a9e6328fd3f5844b7cfdc2038cc5e9db1251cd296b8"
+    },
+    {
+      "bytes": 2522493,
+      "path": "obs/all/kotabaru.csv",
+      "rows": 42839,
+      "sha256": "b883e2c27681cf49c72a7ed1f89e98c4c11a996cfc7ccdb99ad08f3833777d59"
+    },
+    {
+      "bytes": 2605857,
+      "path": "obs/all/kototabang.csv",
+      "rows": 41464,
+      "sha256": "92467875a97dd226f648da5c120760fc8e8125ffe5a28a2838a04482844eeef5"
+    },
+    {
+      "bytes": 2507915,
+      "path": "obs/all/kubu_raya.csv",
+      "rows": 43171,
+      "sha256": "70328629f72358d5f87f599d18370ebd4a01c7b13695ac0e962655996bc3d77a"
+    },
+    {
+      "bytes": 1298363,
+      "path": "obs/all/lore_lindu.csv",
+      "rows": 23925,
+      "sha256": "a5f18c560d8c53687bec23308b74cc77afbfbc1877e6a232ec553e081e15b3ed"
+    },
+    {
+      "bytes": 2417870,
+      "path": "obs/all/malang.csv",
+      "rows": 42192,
+      "sha256": "063e12d0648fea521cee8cd9a757bd970307ca21a4e58b0986d1f6a008503a20"
+    },
+    {
+      "bytes": 2278874,
+      "path": "obs/all/maros.csv",
+      "rows": 40746,
+      "sha256": "85e3481183521b9a825658550dd213a1e9ad1ce81ad98a137e94367bbeac880e"
+    },
+    {
+      "bytes": 2466852,
+      "path": "obs/all/medan.csv",
+      "rows": 42865,
+      "sha256": "1acaacaff501f10fc3975805af9af018a87b3035523511925265c56696d521a8"
+    },
+    {
+      "bytes": 2616187,
+      "path": "obs/all/mempawah.csv",
+      "rows": 43007,
+      "sha256": "2277334efa9b552d0032964897036b4d7257fde2bd27859401067afcb3123957"
+    },
+    {
+      "bytes": 2424461,
+      "path": "obs/all/muaro_jambi.csv",
+      "rows": 42407,
+      "sha256": "7c947c9a9becaad4a0a9376a935f236abddca8cc9125d43992435f3069247b11"
+    },
+    {
+      "bytes": 2626304,
+      "path": "obs/all/musi_2_palembang.csv",
+      "rows": 42878,
+      "sha256": "8063ab93109cc018435bdbd09c7c1f72afc39ab18c51aedbe8aea9fe408f9d60"
+    },
+    {
+      "bytes": 2884745,
+      "path": "obs/all/palangkaraya.csv",
+      "rows": 45095,
+      "sha256": "0b63105f93bd3094d4219cf269d025c8d12aa35faa5c3655828e364fa8957027"
+    },
+    {
+      "bytes": 2678058,
+      "path": "obs/all/pangkalanbun.csv",
+      "rows": 41904,
+      "sha256": "1487b411b8e8a69246fe25714a435813c6e3e5af064f24f9a609851c9abf2b21"
+    },
+    {
+      "bytes": 2886276,
+      "path": "obs/all/pekanbaru.csv",
+      "rows": 47095,
+      "sha256": "11fa91e90f3639bf3f6e7a590452cf361c9fbaf0e05ab6c5200396b6fbf63b66"
+    },
+    {
+      "bytes": 2640172,
+      "path": "obs/all/pesawaran.csv",
+      "rows": 43576,
+      "sha256": "cd0a47571e89e7c8f6ece4778a56ff2ecef8b16c1f498a48501bd8dec345dcb6"
+    },
+    {
+      "bytes": 2945678,
+      "path": "obs/all/samarinda.csv",
+      "rows": 48475,
+      "sha256": "8f82e126171621baf160dfeb8bd0d26351cd7848076e1063c762c486ed1d3606"
+    },
+    {
+      "bytes": 2521506,
+      "path": "obs/all/semarang.csv",
+      "rows": 42186,
+      "sha256": "80a80572dbade539e62ba8e9e65666e7f0b22e9b7917cd1bf8452b6c1a98db86"
+    },
+    {
+      "bytes": 2493521,
+      "path": "obs/all/sintang.csv",
+      "rows": 42887,
+      "sha256": "c6b07b58f9a1798d9c5e4e4f808e7a4ea613db51e0357961d236091d18370648"
+    },
+    {
+      "bytes": 2440914,
+      "path": "obs/all/sleman.csv",
+      "rows": 43328,
+      "sha256": "f21ee42c2069a8d755c304a2f877f7ffd58720d7956459e604a0b9a3811bcc0e"
+    },
+    {
+      "bytes": 2393043,
+      "path": "obs/all/sorong.csv",
+      "rows": 41880,
+      "sha256": "31baf653f8bf8a28b3a275d6215281f19fca39d142859375ffa65128813b4ba3"
+    },
+    {
+      "bytes": 2994357,
+      "path": "obs/all/talang_betutu_palembang.csv",
+      "rows": 48650,
+      "sha256": "d052f2c76056991531bf6677257d4df9207d1222c3966f57577f45f9717b67fe"
+    },
+    {
+      "bytes": 2976605,
+      "path": "obs/all/tanjung_harapan.csv",
+      "rows": 45143,
+      "sha256": "cd7d2d85f4ed56993b64d9e930b02f2ba4ec3eb2a7fc9f60548e903b39e53d5e"
+    }
+  ],
+  "source_rows": 1158532,
+  "start_utc": "2021-01-01T00:00:00+00:00",
+  "station_codes": 27,
+  "timestamp_parse_failures": 0,
+  "unique_station_hours": 1158490,
+  "valid_pm25": 1116030,
+  "valid_pm25_pct": 96.33139179582437
+}

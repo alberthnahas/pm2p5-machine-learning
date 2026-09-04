@@ -1,0 +1,142 @@
+{
+  "figures": [
+    {
+      "figure": "figure_01_observation_coverage",
+      "outputs": [
+        {
+          "bytes": 320346,
+          "path": "figures/figure_01_observation_coverage.png",
+          "sha256": "70fea6d669df191e5d7a49319523de76e78bc6e72d939be7c1db09624b25db20"
+        },
+        {
+          "bytes": 34026,
+          "path": "figures/figure_01_observation_coverage.svg",
+          "sha256": "d2059a78f0adfa7f29d9ed56978fc35d09b8c7c4ad3544e3097c4c07b85c3598"
+        }
+      ]
+    },
+    {
+      "figure": "figure_02_test_performance",
+      "outputs": [
+        {
+          "bytes": 279373,
+          "path": "figures/figure_02_test_performance.png",
+          "sha256": "e4371346ce0053329f06dfebcb56b255cb819efafd52c258a06635471cbb1f50"
+        },
+        {
+          "bytes": 22227,
+          "path": "figures/figure_02_test_performance.svg",
+          "sha256": "ed7a4f097952aa21fae6101a03617bf1476610491c55a525e90aa471ec5b7262"
+        }
+      ]
+    },
+    {
+      "figure": "figure_03_station_skill",
+      "outputs": [
+        {
+          "bytes": 291901,
+          "path": "figures/figure_03_station_skill.png",
+          "sha256": "a05ba06e62bd1e56a29a53ea4afc674cf3629b4d3f3b322934750bd2628c8451"
+        },
+        {
+          "bytes": 25322,
+          "path": "figures/figure_03_station_skill.svg",
+          "sha256": "b34bf638c4133676490a78c61a6f5be842eeed24aaafdbc7ee514ed3a1ae7ce6"
+        }
+      ]
+    },
+    {
+      "figure": "figure_04_observed_vs_predicted",
+      "outputs": [
+        {
+          "bytes": 399016,
+          "path": "figures/figure_04_observed_vs_predicted.png",
+          "sha256": "029031d8788d477da0474a79647ae23edd15759557917a81b7c42e94d358c088"
+        },
+        {
+          "bytes": 190676,
+          "path": "figures/figure_04_observed_vs_predicted.svg",
+          "sha256": "931a18cad281179e037f3b13793649ba87ee9ad8205c4a3d292840ae315280fd"
+        }
+      ]
+    },
+    {
+      "figure": "figure_05_prediction_intervals",
+      "outputs": [
+        {
+          "bytes": 210350,
+          "path": "figures/figure_05_prediction_intervals.png",
+          "sha256": "e3d52e913630be2bf27691e4521634425169137772914d0ef066c08fc9f5ab1a"
+        },
+        {
+          "bytes": 22147,
+          "path": "figures/figure_05_prediction_intervals.svg",
+          "sha256": "e13c2856cdba135b9e7c9ca07fd6656cf0902b83221d2f7c2334a6c135a9dde6"
+        }
+      ]
+    },
+    {
+      "figure": "figure_06_high_event_detection",
+      "outputs": [
+        {
+          "bytes": 200951,
+          "path": "figures/figure_06_high_event_detection.png",
+          "sha256": "5f6e6c8fc3be8e3599d36f91cb474a6c0b23799f80c12eebcfb8038ea3161669"
+        },
+        {
+          "bytes": 15503,
+          "path": "figures/figure_06_high_event_detection.svg",
+          "sha256": "4228b260ac38d3bd154af7d408e62dfacaa06ab50ef60c6a61cc9e2d2bd8f181"
+        }
+      ]
+    },
+    {
+      "figure": "figure_07_feature_importance",
+      "outputs": [
+        {
+          "bytes": 229232,
+          "path": "figures/figure_07_feature_importance.png",
+          "sha256": "1f9e706d58b92483402db0bf7731ec233c4c8c57c1e8e2a52785ab5709ddf645"
+        },
+        {
+          "bytes": 15535,
+          "path": "figures/figure_07_feature_importance.svg",
+          "sha256": "2fc4b39471ec423cfce4747a20f258429cf3f806509102154837130378f71818"
+        }
+      ]
+    },
+    {
+      "figure": "figure_08_station_transfer",
+      "outputs": [
+        {
+          "bytes": 209928,
+          "path": "figures/figure_08_station_transfer.png",
+          "sha256": "fd52a7857e1e2b67dcbc818447a098d33228e36535620945531d47aa189541bd"
+        },
+        {
+          "bytes": 19288,
+          "path": "figures/figure_08_station_transfer.svg",
+          "sha256": "6be5fed24d1a50caf13531f36e18b317e03778107cbf95958908885493a0ab02"
+        }
+      ]
+    },
+    {
+      "figure": "figure_09_residual_bias",
+      "outputs": [
+        {
+          "bytes": 173812,
+          "path": "figures/figure_09_residual_bias.png",
+          "sha256": "a957ec51608c3cec2825d733031be0d6d42e4797c7ef950d0ee9323777c2bfdd"
+        },
+        {
+          "bytes": 15112,
+          "path": "figures/figure_09_residual_bias.svg",
+          "sha256": "96d741e82cfbd98e16d55562a055ac9e6c76d5c2e7cc5e0d6d7f762cde3edf93"
+        }
+      ]
+    }
+  ],
+  "format": "SVG plus 300 dpi PNG",
+  "generated_utc": "2026-09-04T10:57:30.244494+00:00",
+  "style": "colorblind-aware restrained scientific chart standard"
+}

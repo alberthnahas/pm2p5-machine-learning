@@ -1,0 +1,293 @@
+{
+  "checks": [
+    {
+      "detail": {
+        "checked": 27,
+        "mismatches": []
+      },
+      "name": "immutable observation source checksums",
+      "passed": true
+    },
+    {
+      "detail": {
+        "source_files": 27,
+        "station_codes": 27
+      },
+      "name": "station and source reconciliation",
+      "passed": true
+    },
+    {
+      "detail": {
+        "conflicting_duplicate_keys": 0,
+        "exact_duplicate_rows_removed": 42
+      },
+      "name": "observation key integrity",
+      "passed": true
+    },
+    {
+      "detail": {
+        "duplicate_keys": 0,
+        "negative_lag_feature_definitions": 0,
+        "target_before_or_at_issue": 0,
+        "train_test_target_time_overlap": 0,
+        "train_validation_target_time_overlap": 0,
+        "validation_test_target_time_overlap": 0
+      },
+      "name": "leakage and split audit",
+      "passed": true
+    },
+    {
+      "detail": [
+        3,
+        6,
+        12,
+        24,
+        48,
+        72
+      ],
+      "name": "configured lead coverage",
+      "passed": true
+    },
+    {
+      "detail": {
+        "coverage_pct": 99.53807429535586,
+        "missing_station_issue_leads": 1002
+      },
+      "name": "CAMS extraction coverage and gap inventory",
+      "passed": true
+    },
+    {
+      "detail": {
+        "native_grid_max_abs_difference_ug_m3": 1.687538997430238e-05,
+        "station_sampling_mean_abs_difference_ug_m3": 0.10691823645535649
+      },
+      "name": "direct ADS and Earth Engine source comparison",
+      "passed": true
+    },
+    {
+      "detail": {
+        "config_sha256": "5ffeea8907a9f98f318d04cae6690ac810c159f7a446d0236f77f896d9a8f11a",
+        "modeling_table_sha256": "4a259d7032ca13eeb36f496128f9f601675cf60134b61a32d2f8af2a49bee649"
+      },
+      "name": "research manifest input hashes",
+      "passed": true
+    },
+    {
+      "detail": {
+        "conformal_calibration_end_utc": "2025-12-31T23:00:00+00:00",
+        "conformal_calibration_start_utc": "2025-07-01T00:00:00+00:00",
+        "deployment_calibration_rows": {
+          "12": 4444,
+          "24": 4395,
+          "3": 4383,
+          "48": 4396,
+          "6": 4327,
+          "72": 4395
+        },
+        "quantile_tuning_end_utc": "2025-06-30T23:00:00+00:00",
+        "research_calibration_rows": {
+          "12": 4444,
+          "24": 4395,
+          "3": 4383,
+          "48": 4396,
+          "6": 4327,
+          "72": 4395
+        },
+        "test_start_utc": "2026-01-01T00:00:00+00:00"
+      },
+      "name": "strict interval tuning calibration and test separation",
+      "passed": true
+    },
+    {
+      "detail": {
+        "end_utc": "2025-12-31T23:00:00Z",
+        "excluded_test_period": [
+          "2026-01-01T00:00:00Z",
+          "2026-08-31T23:00:00Z"
+        ],
+        "start_utc": "2023-01-01T00:00:00Z"
+      },
+      "name": "deployment excludes independent test targets",
+      "passed": true
+    },
+    {
+      "detail": {
+        "checked": 66,
+        "mismatches": []
+      },
+      "name": "serialized model checksums",
+      "passed": true
+    },
+    {
+      "detail": {
+        "champion": "cams_lgbm",
+        "selected_rows": 1
+      },
+      "name": "single validation-selected champion",
+      "passed": true
+    },
+    {
+      "detail": {
+        "compared_rows": 89133,
+        "selected_column": "cams_lgbm"
+      },
+      "name": "champion predictions map to frozen selection",
+      "passed": true
+    },
+    {
+      "detail": {
+        "checked_rows": 89133,
+        "violations": 0
+      },
+      "name": "research prediction interval ordering",
+      "passed": true
+    },
+    {
+      "detail": {
+        "bootstrap_probability_positive_pct": 100.0,
+        "bootstrap_replicates": 1000,
+        "cams_mae_improvement_over_obs_ml_ug_m3": 0.1777428732702055,
+        "ci95_lower_ug_m3": 0.119475858573697,
+        "ci95_upper_ug_m3": 0.2420407138600167,
+        "forecast_hour": "all",
+        "n_common_rows": 36315,
+        "n_station_weeks": 945,
+        "relative_improvement_over_obs_ml_pct": 1.645007133907,
+        "split": "test"
+      },
+      "name": "CAMS ablation bootstrap completed",
+      "passed": true
+    },
+    {
+      "detail": {
+        "duplicate_keys": 0,
+        "interval_violations": 0,
+        "rows": 162,
+        "stations": 27,
+        "statuses": {
+          "primary": 162
+        }
+      },
+      "name": "experimental operational output",
+      "passed": true
+    },
+    {
+      "detail": {
+        "figures": 9,
+        "mismatches": [],
+        "png_dimensions": {
+          "figure_01_observation_coverage": [
+            2795,
+            1864
+          ],
+          "figure_02_test_performance": [
+            2999,
+            1357
+          ],
+          "figure_03_station_skill": [
+            3238,
+            1808
+          ],
+          "figure_04_observed_vs_predicted": [
+            2772,
+            1392
+          ],
+          "figure_05_prediction_intervals": [
+            2794,
+            1392
+          ],
+          "figure_06_high_event_detection": [
+            2391,
+            1357
+          ],
+          "figure_07_feature_importance": [
+            3200,
+            1498
+          ],
+          "figure_08_station_transfer": [
+            2856,
+            1392
+          ],
+          "figure_09_residual_bias": [
+            2966,
+            1300
+          ]
+        }
+      },
+      "name": "figure inventory and checksums",
+      "passed": true
+    },
+    {
+      "detail": {
+        "checks": {
+          "color_encoding_consistent_with_captions": true,
+          "labels_legible_at_full_render": true,
+          "landscape_station_table_legible": true,
+          "missing_data_visually_distinct_from_zero": true,
+          "no_clipped_content": true,
+          "no_overlapping_content": true
+        },
+        "figure_manifest_sha256": "9efa60362b935d4d8502f35a079a841837d6125f0ee935c4a6a9286e3cc05c00",
+        "figures_inspected": [
+          "figure_01_observation_coverage",
+          "figure_02_test_performance",
+          "figure_03_station_skill",
+          "figure_04_observed_vs_predicted",
+          "figure_05_prediction_intervals",
+          "figure_06_high_event_detection",
+          "figure_07_feature_importance",
+          "figure_08_station_transfer",
+          "figure_09_residual_bias"
+        ],
+        "inspected_utc": "2026-09-04T10:57:50Z",
+        "method": "contact-sheet review followed by full-resolution inspection of corrected body and table typography, methods/results tables, operational-design page, and landscape station table",
+        "pdf_pages_inspected": 13,
+        "pdf_sha256": "6a1c03cdfa10f3f2615edb08a941b5b5c08f4fa060d589ee26f8ccc9eda94c2d",
+        "status": "pass"
+      },
+      "name": "current figure and PDF visual inspection",
+      "passed": true
+    },
+    {
+      "detail": {
+        "code_cells": 10,
+        "errored_cells": 0,
+        "executed_code_cells": 10,
+        "executed_utc": "2026-09-04T10:42:15.929949+00:00",
+        "output": "pm25_station_forecast_audit_executed.ipynb",
+        "output_bytes": 830308,
+        "source": "pm25_station_forecast_audit.ipynb"
+      },
+      "name": "top-to-bottom notebook execution",
+      "passed": true
+    },
+    {
+      "detail": {
+        "all_fonts_embedded": true,
+        "bytes": 2047657,
+        "compilation_log_sha256": "b03e53248051eba3ab53d3ccf5e74ccc13f8e2d36880daeff1385d591d6f4548",
+        "missing_required_phrases": [],
+        "page_size": "595.28 x 841.89 pts (A4)",
+        "pages": 13,
+        "pdf": "reports/pm25_station_cams_mos_research_to_operations.pdf",
+        "rendered_pages": 13,
+        "sha256": "6a1c03cdfa10f3f2615edb08a941b5b5c08f4fa060d589ee26f8ccc9eda94c2d",
+        "verified_utc": "2026-09-04T10:57:43.337832+00:00"
+      },
+      "name": "PDF structural QA",
+      "passed": true
+    },
+    {
+      "detail": {
+        "found_markers": []
+      },
+      "name": "reader-facing report excludes internal paths and credentials",
+      "passed": true
+    }
+  ],
+  "failed_check_names": [],
+  "failed_checks": 0,
+  "passed_checks": 21,
+  "status": "pass",
+  "validated_utc": "2026-09-04T10:58:22.527444+00:00"
+}

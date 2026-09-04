@@ -1,0 +1,370 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=22mm]{geometry}
+\usepackage{fontspec}
+\setmainfont{Liberation Serif}
+\setsansfont{Liberation Sans}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{adjustbox}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{float}
+\usepackage{pdflscape}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\definecolor{Accent}{HTML}{006D77}
+\definecolor{Alert}{HTML}{B45309}
+\definecolor{Soft}{HTML}{EDF6F3}
+\hypersetup{colorlinks=true,linkcolor=Accent,urlcolor=Accent,citecolor=Accent,pdftitle={Research-to-operational hourly PM2.5 forecasting at 27 Indonesian stations}}
+\captionsetup{font=small,labelfont=bf}
+\setlist{nosep,leftmargin=6mm}
+\setlength{\parskip}{0.55em}
+\setlength{\parindent}{0pt}
+\newcommand{\highlight}[1]{\colorbox{Soft}{\parbox{0.94\linewidth}{#1}}}
+\title{\sffamily\bfseries Research-to-operational hourly PM\textsubscript{2.5} forecasting\\at 27 Indonesian stations}
+\author{}
+\date{Experimental model-development report --- not yet an operational public product\\04 September 2026}
+\begin{document}
+\maketitle
+\vfill
+\highlight{\textbf{Scope.} Daily 00 UTC forecasts at +3, +6, +12, +24, +48, and +72 hours. The output is predictive and does not provide causal or source attribution.}
+\vfill
+\thispagestyle{empty}
+\clearpage
+\tableofcontents
+\clearpage
+
+\section{Executive finding}
+The validation-selected model is \textbf{CAMS model-output-statistics LightGBM}. Across the six lead times in the untouched 1 January--31 August 2026 test period, its mean station-balanced mean absolute error (MAE) is \textbf{9.82~µg~m\textsuperscript{-3}}, corresponding to \textbf{+28.5\%} mean skill relative to persistence and \textbf{+34.2\%} relative to raw CAMS. Improvement occurs in \textbf{94.4\%} of station--lead combinations, so aggregate skill does not imply uniform local benefit. The nominal 80\% prediction intervals attain \textbf{78.8\%} mean test coverage across leads.
+
+\highlight{\textbf{Operational decision.} Retain the system as pre-operational. It is suitable for scheduled shadow forecasts and scorecard monitoring, but public or duty-forecaster reliance should wait for prospective evaluation, explicit input-latency tests, a second forecast cycle, and an assessment of forecast meteorology.}
+
+\section{Question and intended use}
+The question is whether a pooled machine-learning model can improve station-level hourly PM\textsubscript{2.5} forecasts over simple persistence at 27 BMKG locations while remaining computationally light enough for routine operation. One direct model is fitted for each forecast lead; direct forecasting avoids recursive error propagation. The intended output is a concentration forecast in µg~m\textsuperscript{-3} plus a calibrated uncertainty interval at each observed station.
+
+The primary inference domain is the existing network. A separate station-holdout experiment asks how well the approach transfers to a location absent from fitting. Neither experiment creates a continuous spatial concentration field.
+
+\section{Data, quality control, and provenance}
+The supplied archive contains \textbf{1,158,532} rows from 27 hourly station files spanning 2021-01-01 to 2026-08-31. After documented error screening, \textbf{1,116,030 (96.33\%)} source rows contain valid PM\textsubscript{2.5}. Exact duplicated station-hours were removed only in derived data; no conflicting duplicate key was accepted. Negative PM\textsubscript{2.5} and values at or above 985~µg~m\textsuperscript{-3} were treated as instrument error values. Plausible extremes below the cutoff were retained.
+
+Relative humidity outside (0,100]\% and temperature outside -10 to 50~°C were made unavailable as predictors without altering PM\textsubscript{2.5}. This screening identified a block of physically impossible temperature values at Koto Tabang; the values were not corrected or imputed. Median station-level valid PM\textsubscript{2.5} coverage within each station's observed span is \textbf{94.3\%}.
+
+CAMS global atmospheric-composition forecast PM\textsubscript{2.5} was extracted from the official \texttt{ECMWF/CAMS/NRT} Earth Engine mirror~\cite{camsgee} and bilinearly sampled to station coordinates. Source mass density in kg~m\textsuperscript{-3} was converted explicitly to µg~m\textsuperscript{-3}. The parent CAMS service provides global forecasts twice daily on a 0.4° grid and is an atmospheric model product, not a surface observation~\cite{cams}. The mirror is three-hourly, so +3~h is the earliest evaluated lead; no +1~h field was synthesized.
+
+The extract retained \textbf{215,916 of 216,918 station--issue--lead records (99.54\%)}. Missing records comprise a partial spatial gap on 17--23 February 2024 and a fully missing 00 UTC initialization on 30 June 2025; they were not imputed. A direct Copernicus archive check covered 20 in-domain stations and five common leads on 1 January 2026. Across 100 native grid-point comparisons, the maximum absolute difference was 0.000017~µg~m\textsuperscript{-3}; station-resampling implementations differed by 0.107~µg~m\textsuperscript{-3} on average and 1.217~µg~m\textsuperscript{-3} at most. This supports identity of the underlying field while documenting interpolation-level differences. The bounded experiment uses CAMS PM\textsubscript{2.5} plus observed temperature and humidity histories; forecast meteorology is a declared next-stage input.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.97\textwidth]{../figures/figure_01_observation_coverage.png}
+\caption{Monthly valid PM2.5 coverage across the 27 stations. Missing coverage is distinct from a valid zero concentration.}
+\label{fig:1}
+\end{figure}
+
+\section{Prediction design}
+\subsection{Inputs}
+Predictors use only timestamps at or before issue time: PM\textsubscript{2.5} lags from 0 to 168~h; temperature and relative-humidity lags to 24~h; rolling PM\textsubscript{2.5} mean, standard deviation, maximum, and availability over 3--168~h; local-hour and annual-cycle encodings; station coordinates and region; contemporaneous and distance-weighted network context within 400~km; and forecast-valid CAMS PM\textsubscript{2.5}. Missing predictor values are retained for native tree handling. Feature importance is diagnostic and not causal importance.
+
+\subsection{Chronological separation}
+Targets from 2023--2024 form training, 2025 is used for point-model early stopping and model choice, and 2026 through 31 August is evaluated once as the final test. The uncertainty workflow adds a nested temporal separation: January--June 2025 tunes quantile tree counts, while July--December 2025 is reserved exclusively for conformal calibration. Splits are assigned by target time, not issue time. The derived table contains \textbf{216,918} station--issue--lead rows and \textbf{200,724} valid targets. Automated audits found 0 duplicate modeling keys, 0 non-future targets, and no target-time overlap among train, validation, and test. Chronological and station-blocked validation are used because random splitting of structured environmental data can underestimate predictive error~\cite{roberts}.
+
+\subsection{Models and uncertainty}
+Persistence and a training-only station/local-time climatology are reference forecasts. Candidate learners are observation-only LightGBM, CAMS model-output-statistics (MOS) LightGBM, and CAMS MOS XGBoost. Gradient-boosted trees represent nonlinear interactions and missingness without the compute cost of deep sequence models~\cite{lightgbm,xgboost}. CAMS calibration with machine learning has prior scientific precedent, although performance is domain-specific~\cite{wu}.
+
+Point and quantile predictions are clipped only at the physical lower bound of 0~µg~m\textsuperscript{-3}. Quantile LightGBM estimates the 10th, 50th, and 90th conditional percentiles. Quantile crossing is removed by sorting, then a lead-specific split-conformal expansion is estimated from the held July--December 2025 calibration block pooled across stations. Neither fitting nor interval calibration accesses 2026. Conformalized quantile regression provides a principled basis for adaptive prediction intervals under exchangeability assumptions~\cite{romano}; temporal autocorrelation and later CAMS system changes mean empirical monitoring remains necessary.
+
+\section{Validation selection and independent test results}
+Model choice used mean station-balanced validation MAE across all six leads. The specified tie-break prefers CAMS LightGBM when it lies within 1\% of the minimum, reducing deployment complexity while retaining a physically based forecast input.
+
+\begin{table}[H]
+\centering
+\small
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lrrc}
+\toprule
+Candidate & Validation MAE & Skill vs persistence (\%) & Selected \\
+\midrule
+CAMS MOS LightGBM & 7.12 & 28.7 & Yes \\
+CAMS MOS XGBoost & 7.16 & 28.0 & No \\
+Observation-only LightGBM & 7.19 & 28.3 & No \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+The selected model's validation criterion is \textbf{7.12~µg~m\textsuperscript{-3}}. The following table reports the subsequently opened test set. Positive bias means overprediction. The confidence interval is a 1,000-replicate station-week block bootstrap for absolute-error improvement over persistence.
+
+\begin{table}[H]
+\centering
+\small
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{rrrrrrrrrl}
+\toprule
+Lead (h) & n & MAE & Persistence MAE & Raw CAMS MAE & Skill (\%) & RMSE & Bias & r & 95\% CI: MAE gain \\
+\midrule
++3 & 5,918 & 7.62 & 12.64 & 9.95 & 36.5 & 16.48 & -2.36 & 0.73 & [3.79, 6.29] \\
++6 & 5,753 & 6.29 & 14.18 & 7.91 & 48.0 & 13.44 & -1.58 & 0.72 & [7.26, 9.59] \\
++12 & 5,897 & 10.50 & 16.69 & 17.61 & 32.9 & 16.62 & -2.23 & 0.58 & [5.77, 8.14] \\
++24 & 5,859 & 10.84 & 13.11 & 17.51 & 17.6 & 19.55 & -3.43 & 0.66 & [1.02, 2.45] \\
++48 & 5,839 & 11.66 & 13.90 & 18.10 & 16.9 & 21.39 & -4.41 & 0.59 & [0.99, 3.10] \\
++72 & 5,832 & 12.03 & 14.68 & 18.55 & 19.2 & 21.83 & -4.45 & 0.57 & [1.16, 3.50] \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\subsection{Incremental value of CAMS}
+Relative to the otherwise identical observation-only LightGBM, adding forecast-valid CAMS PM\textsubscript{2.5} reduced station-week-balanced MAE by \textbf{0.065~µg~m\textsuperscript{-3}} in validation (95\% bootstrap interval 0.034 to 0.098) and \textbf{0.178~µg~m\textsuperscript{-3}} in the independent test (95\% interval 0.119 to 0.242). This is an aggregate predictive association, not causal evidence. Test-period gains are clearest at +3 to +12~h; intervals cross zero at each of +24, +48, and +72~h, so longer-lead incremental benefit remains inconclusive individually.
+
+\begin{table}[H]
+\centering
+\small
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lrrrr}
+\toprule
+Lead (h) & MAE gain & Relative gain (\%) & 95\% CI & Station-weeks \\
+\midrule
++3 & 0.295 & 3.34 & [0.194, 0.394] & 945 \\
++6 & 0.390 & 5.43 & [0.286, 0.489] & 944 \\
++12 & 0.240 & 2.17 & [0.165, 0.315] & 944 \\
++24 & 0.012 & 0.11 & [-0.179, 0.184] & 945 \\
++48 & 0.045 & 0.36 & [-0.057, 0.143] & 945 \\
++72 & 0.089 & 0.68 & [-0.033, 0.222] & 945 \\
+All leads & 0.178 & 1.65 & [0.119, 0.242] & 945 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.97\textwidth]{../figures/figure_02_test_performance.png}
+\caption{Station-balanced test MAE by lead for all candidates and reference forecasts.}
+\label{fig:2}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.97\textwidth]{../figures/figure_03_station_skill.png}
+\caption{Selected-model MAE skill relative to persistence for every station and lead.}
+\label{fig:3}
+\end{figure}
+
+The five least favourable station--lead combinations include SINTANG (-15.2\%), SUPADIO (-13.1\%), SUPADIO (-12.9\%), SINTANG (-10.2\%), SUPADIO (-9.5\%). These are failure modes for investigation, not grounds for deleting observations or selectively omitting stations.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.97\textwidth]{../figures/figure_04_observed_vs_predicted.png}
+\caption{Observed versus selected-model PM2.5 at +24 h and +72 h. Display axes are limited to the pooled 99.5th percentile for legibility; metrics use the full valid range.}
+\label{fig:4}
+\end{figure}
+
+\section{Uncertainty and high-concentration performance}
+\begin{table}[H]
+\centering
+\small
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{rrrrr}
+\toprule
+Lead (h) & n & Coverage (\%) & Mean width & Interval score \\
+\midrule
++3 & 6,050 & 79.4 & 19.8 & 42.3 \\
++6 & 5,905 & 79.3 & 17.7 & 33.0 \\
++12 & 6,108 & 81.1 & 34.0 & 53.0 \\
++24 & 6,084 & 78.0 & 31.7 & 53.4 \\
++48 & 6,084 & 77.5 & 32.3 & 57.6 \\
++72 & 6,084 & 77.5 & 32.5 & 60.6 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.97\textwidth]{../figures/figure_05_prediction_intervals.png}
+\caption{Independent empirical coverage and mean width of the nominal 80 percent intervals.}
+\label{fig:5}
+\end{figure}
+
+High-concentration events are defined separately for each station and lead using the station's training-period 90th percentile. Probability of detection (POD) is the fraction of observed events detected; false-alarm ratio (FAR) is the fraction of predicted events that did not occur; critical success index (CSI) penalizes misses and false alarms.
+
+\begin{table}[H]
+\centering
+\small
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{rrrrrrr}
+\toprule
+Lead (h) & Hits & Misses & False alarms & POD (\%) & FAR (\%) & CSI (\%) \\
+\midrule
++3 & 392 & 322 & 148 & 54.9 & 27.4 & 45.5 \\
++6 & 403 & 314 & 125 & 56.2 & 23.7 & 47.9 \\
++12 & 225 & 475 & 85 & 32.1 & 27.4 & 28.7 \\
++24 & 357 & 423 & 148 & 45.8 & 29.3 & 38.5 \\
++48 & 280 & 500 & 153 & 35.9 & 35.3 & 30.0 \\
++72 & 252 & 528 & 154 & 32.3 & 37.9 & 27.0 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.97\textwidth]{../figures/figure_06_high_event_detection.png}
+\caption{High-concentration event performance on the independent test period.}
+\label{fig:6}
+\end{figure}
+
+\section{Robustness, spatial transfer, and interpretation}
+The same-network test estimates performance for stations represented in training. Five station folds provide a separate transfer diagnostic: each held station is tested with a model fitted to the remaining stations and without station identity. Fold assignment is independent of target values.
+
+\begin{table}[H]
+\centering
+\small
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{rrrr}
+\toprule
+Lead (h) & Stations & MAE & Skill vs persistence (\%) \\
+\midrule
++3 & 27 & 7.78 & 35.0 \\
++6 & 27 & 6.50 & 46.4 \\
++12 & 27 & 11.29 & 25.6 \\
++24 & 27 & 11.09 & 14.1 \\
++48 & 27 & 11.98 & 13.0 \\
++72 & 27 & 12.42 & 14.4 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.97\textwidth]{../figures/figure_08_station_transfer.png}
+\caption{Performance when test stations are excluded from model fitting.}
+\label{fig:8}
+\end{figure}
+
+The 2024-only training sensitivity holds model form and tree counts fixed, changing only the fitting window. A positive difference means the shorter window has higher test MAE.
+
+\begin{table}[H]
+\centering
+\small
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{rrrr}
+\toprule
+Lead (h) & Frozen MAE & 2024-only MAE & Difference \\
+\midrule
++3 & 7.62 & 7.85 & 0.24 \\
++6 & 6.29 & 6.63 & 0.34 \\
++12 & 10.50 & 10.99 & 0.49 \\
++24 & 10.84 & 11.28 & 0.44 \\
++48 & 11.66 & 12.01 & 0.35 \\
++72 & 12.03 & 12.39 & 0.36 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+Distribution-shift diagnostics compare predictor missingness, standardized mean differences, and population stability index between training and test. These statistics identify monitoring candidates; they do not establish that a shift caused an error. Residual bias is stratified by station, target month, and local target hour.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.97\textwidth]{../figures/figure_07_feature_importance.png}
+\caption{Mean fitted-tree feature importance for the selected model. Correlated predictors can exchange importance.}
+\label{fig:7}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.97\textwidth]{../figures/figure_09_residual_bias.png}
+\caption{Selected-model mean residual by target month and lead.}
+\label{fig:9}
+\end{figure}
+
+\section{Computational requirements and operational design}
+The experiment is designed for a CPU workstation; no GPU is required. Training uses at most 8 CPU threads. Measured peak memory was \textbf{preparation 1.43 GiB, training 0.81 GiB}. Measured preparation time was \textbf{92.9~s}, candidate/uncertainty/transfer evaluation was \textbf{103.5~s}, and deployment refitting was \textbf{24.4~s}. The complete deterministic pipeline took \textbf{4.7~min} across its latest successful stage measurements. The serialized deployment bundle is \textbf{9.8~MiB}. Warm inference across all point, fallback, and interval models totals about \textbf{0.136~s}, excluding model loading, input download, and feature preparation. The measured prepared-input end-to-end command took \textbf{2.13~s} for 162 station--lead rows.
+
+For a routine 00 UTC run, a practical allocation is \textbf{4--8 CPU cores, 4~GiB RAM, and 2~GiB working storage}. Model inference should finish in under one minute; CAMS acquisition is network- and service-limited and should be budgeted at \textbf{5--30 minutes} with retries. The initial 3.7-year Earth Engine backfill required \textbf{12.7~min} of measured server-query time. A full deterministic research rebuild should be budgeted at \textbf{5--15 minutes} on a comparable CPU workstation; slower CPUs and uncached report dependencies may require longer.
+
+Deployment point models are refitted through December 2025; deployment quantile models stop at June 2025 so July--December remains a held calibration block. If CAMS PM\textsubscript{2.5} is missing, a separately fitted observation-only point forecast is used and the status is marked degraded; calibrated intervals are withheld. Observation older than six hours is explicitly flagged. This fallback supports continuity but must not be presented as equivalent quality.
+
+\subsection{Recommended shadow workflow}
+\begin{enumerate}
+\item Retrieve and validate the 00 UTC CAMS forecast after publication.
+\item Freeze the latest observation cutoff and record station freshness.
+\item Construct predictors without accessing later observations.
+\item Produce forecasts, intervals, status flags, hashes, and logs.
+\item Score forecasts when observations arrive; retain missing cases rather than silently backfilling.
+\item Alert on missing CAMS, stale station data, schema/version changes, extreme residuals, and interval undercoverage.
+\end{enumerate}
+
+\section{Limitations and readiness gates}
+\begin{itemize}
+\item One daily cycle was retrospectively tested; this is not evidence for 12 UTC or arbitrary issue times.
+\item The test covers eight months of 2026, not a complete annual cycle, and no prospective shadow period has yet been observed.
+\item CAMS is much coarser than a station and its forecast system can change; a sampled grid value is not a station measurement.
+\item The CAMS mirror is 99.54\% complete for the specified station--issue--lead grid; missing cycles are excluded from primary complete-case comparisons and require the declared degraded fallback in operations.
+\item Forecast meteorology was not included. Observed meteorology at or before issue time cannot represent future dispersion conditions.
+\item Missingness, maintenance, relocation, calibration change, and reporting latency can alter station performance.
+\item Lead-specific conformal calibration pooled across stations assumes exchangeability more strongly than this autocorrelated, spatially dependent archive warrants. The later calibration block prevents fitting leakage, but held-out coverage is reported rather than guaranteed operationally.
+\item Station-transfer results do not validate a continuous spatial map or arbitrary new station.
+\item Feature importance is not emissions, wildfire, transport, contribution, or causal attribution.
+\end{itemize}
+
+Before public operations, require at least 60--90 days of prospective shadow scoring; a documented data-arrival cutoff; 12 UTC backtesting if desired; incremental-skill tests for forecast wind, boundary-layer height, humidity, and precipitation; CAMS-version monitoring; station-specific fallback rules; alerting and rollback; and scientific sign-off on thresholds and wording.
+
+\section{Reproducibility and data-quality detail}
+Every source observation file, external archive, sampled field, configuration, research model, and deployment model has a SHA-256 checksum in the provenance record. Random seeds are fixed. Derived tables preserve UTC timestamps, source station identity, explicit units, target lead, split, and missingness. No source observation was changed.
+
+\begin{landscape}
+\begin{table}[H]
+\centering
+\small
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrr}
+\toprule
+Station & Name & Start & End & Valid coverage (\%) & Absent hours & Invalid T \\
+\midrule
+PALU & Lore Lindu Bariri & 2021-01-23 & 2026-08-31 & 42.6 & 25,203 & 0 \\
+PALANGKARAYA2 & Palangka Raya & 2021-01-01 & 2026-08-31 & 84.6 & 4,564 & 0 \\
+KOTOTABANG2 & Koto Tabang & 2021-09-24 & 2026-08-31 & 85.7 & 1,805 & 3,662 \\
+TANJUNGHARAPAN2 & Tanjung Harapan & 2021-01-01 & 2026-08-31 & 88.1 & 4,513 & 0 \\
+SORONG & Sorong & 2021-08-19 & 2026-08-31 & 88.9 & 2,250 & 0 \\
+SINTANG & Sintang & 2021-09-19 & 2026-08-31 & 91.0 & 496 & 0 \\
+PANGKALANBUN2 & Pangkalan Bun & 2021-09-24 & 2026-08-31 & 91.2 & 1,353 & 0 \\
+MAROS & Maros & 2021-10-13 & 2026-08-31 & 91.3 & 2,070 & 0 \\
+SAMARINDA2 & Samarinda & 2021-01-01 & 2026-08-31 & 91.8 & 1,181 & 0 \\
+JAMBI3 & Kota Jambi & 2021-01-01 & 2026-08-31 & 92.8 & 2,479 & 0 \\
+BENGKULU & Bengkulu & 2021-08-19 & 2026-08-31 & 93.4 & 576 & 0 \\
+INDRAPURI2 & Indrapuri & 2021-10-04 & 2026-08-31 & 93.6 & 757 & 0 \\
+PEKANBARU2 & Pekanbaru & 2021-01-01 & 2026-08-31 & 93.6 & 2,547 & 0 \\
+JAMBI4 & Muaro Jambi & 2021-08-18 & 2026-08-31 & 94.3 & 1,742 & 0 \\
+KOTABARU & Kotabaru & 2021-10-09 & 2026-08-31 & 94.7 & 52 & 0 \\
+MALANG & Malang & 2021-09-23 & 2026-08-31 & 94.8 & 1,085 & 0 \\
+PALEMBANG4 & Musi 2 Palembang & 2021-08-21 & 2026-08-31 & 95.6 & 1,191 & 0 \\
+PESAWARAN & Pesawaran & 2021-08-05 & 2026-08-31 & 95.8 & 890 & 0 \\
+SEMARANG & Semarang & 2021-09-02 & 2026-08-31 & 95.8 & 1,609 & 0 \\
+PONTIANAK2 & Mempawah & 2021-09-09 & 2026-08-31 & 96.3 & 629 & 0 \\
+PALEMBANG3 & Talang Betutu Palembang & 2021-01-04 & 2026-08-31 & 96.4 & 928 & 0 \\
+KEMAYORAN3 & Kemayoran & 2021-08-25 & 2026-08-31 & 96.6 & 785 & 0 \\
+MEDAN2 & Medan & 2021-09-01 & 2026-08-31 & 97.1 & 946 & 0 \\
+MLATI & Sleman & 2021-09-09 & 2026-08-31 & 97.4 & 286 & 0 \\
+SUPADIO & Kubu Raya & 2021-09-09 & 2026-08-31 & 97.9 & 456 & 0 \\
+BATAM2 & Batam & 2021-09-14 & 2026-08-31 & 97.9 & 292 & 0 \\
+BANJARBARU2 & Banjarbaru & 2021-09-08 & 2026-08-31 & 98.2 & 234 & 0 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+\end{landscape}
+
+\section{References}
+\begin{thebibliography}{9}
+\bibitem{cams} Copernicus Atmosphere Monitoring Service. \emph{CAMS global atmospheric composition forecasts}. \href{https://doi.org/10.24381/04a0b097}{doi:10.24381/04a0b097}.
+\bibitem{wu} Wu, C., Li, K., and Bai, K. (2020). Validation and calibration of CAMS PM\textsubscript{2.5} forecasts using in situ measurements in China and United States. \emph{Remote Sensing}, 12, 3813. \href{https://doi.org/10.3390/rs12223813}{doi:10.3390/rs12223813}.
+\bibitem{lightgbm} Ke, G. et al. (2017). LightGBM: A highly efficient gradient boosting decision tree. \emph{Advances in Neural Information Processing Systems 30}.
+\bibitem{xgboost} Chen, T. and Guestrin, C. (2016). XGBoost: A scalable tree boosting system. \emph{Proceedings of KDD 2016}, 785--794. \href{https://doi.org/10.1145/2939672.2939785}{doi:10.1145/2939672.2939785}.
+\bibitem{romano} Romano, Y., Patterson, E., and Candès, E. J. (2019). Conformalized quantile regression. \emph{Advances in Neural Information Processing Systems 32}, 3538--3548.
+\bibitem{roberts} Roberts, D. R. et al. (2017). Cross-validation strategies for structured data. \emph{Ecography}, 40, 913--929. \href{https://doi.org/10.1111/ecog.02881}{doi:10.1111/ecog.02881}.
+\bibitem{camsgee} Google Earth Engine Data Catalog. \emph{CAMS global near-real-time atmospheric composition forecasts}. \href{https://developers.google.com/earth-engine/datasets/catalog/ECMWF_CAMS_NRT}{Official dataset entry}.
+\end{thebibliography}
+
+\vfill
+\begin{center}\footnotesize Evidence parity marker: authoritative Markdown contains 3,602 words.\end{center}
+\end{document}

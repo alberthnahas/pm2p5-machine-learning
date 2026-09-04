@@ -1,0 +1,4 @@
+model,mean_station_balanced_mae_ug_m3,mean_skill_vs_persistence_pct,selected_champion
+cams_lgbm,7.115966962325632,28.72819174378876,True
+cams_xgboost,7.160143248223537,28.0248497723889,False
+obs_lgbm,7.190488581563655,28.31235832617558,False

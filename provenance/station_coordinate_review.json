@@ -1,0 +1,38 @@
+{
+  "generated_utc": "2026-09-04T09:28:49Z",
+  "review_scope": "Coordinates used to sample CAMS for the 27 supplied PM2.5 station series",
+  "sources": [
+    {
+      "name": "BMKG AWS Center station marker service",
+      "url": "https://awscenter.bmkg.go.id/base/marker_login_map",
+      "use": "Official marker verification for seven locations missing from the existing AQ operational registry",
+      "local_snapshot_manifest": "data/external/bmkg_station_markers/manifest.json"
+    },
+    {
+      "name": "BMKG West Kalimantan UPT profile",
+      "url": "https://kalbar.bmkg.go.id/ptsp/",
+      "use": "Authoritative Mempawah station address and coordinate at Jongkat"
+    },
+    {
+      "name": "Jurnal Sains & Teknologi Modifikasi Cuaca 25(1), 2024",
+      "url": "https://ejournal.brin.go.id/JSTMC/article/download/4990/7015/26440",
+      "use": "Independent published confirmation that the Jongkat site contains the hourly BAM PM2.5 instrument"
+    }
+  ],
+  "material_correction": {
+    "station_code": "PONTIANAK2",
+    "station_name": "Mempawah",
+    "legacy_coordinate": {
+      "latitude": 0.124,
+      "longitude": 110.456,
+      "source": "existing AQ operational configuration"
+    },
+    "adopted_coordinate": {
+      "latitude": 0.0753,
+      "longitude": 109.1908,
+      "source": "BMKG West Kalimantan UPT profile"
+    },
+    "reason": "The supplied Mempawah PM2.5 series represents the Stasiun Klimatologi Kalimantan Barat BAM at Jongkat. The legacy longitude was inconsistent with official BMKG location evidence by more than one degree."
+  },
+  "interpretation": "Other legacy coordinates are retained for this experiment unless an official source demonstrated a material site mismatch. Several differ slightly from current AWS marker positions; such differences are below the 0.4-degree CAMS grid spacing but remain a metadata-maintenance item."
+}

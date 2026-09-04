@@ -1,0 +1,7 @@
+forecast_hour,threshold_definition,n,hits,misses,false_alarms,correct_negatives,probability_of_detection_pct,false_alarm_ratio_pct,critical_success_index_pct
+3,station-specific training-period 90th percentile,6050,392,322,148,5188,54.90196078431372,27.40740740740741,45.475638051044086
+6,station-specific training-period 90th percentile,5905,403,314,125,5063,56.206415620641565,23.674242424242426,47.86223277909739
+12,station-specific training-period 90th percentile,6108,225,475,85,5323,32.142857142857146,27.419354838709676,28.662420382165607
+24,station-specific training-period 90th percentile,6084,357,423,148,5156,45.76923076923077,29.306930693069308,38.4698275862069
+48,station-specific training-period 90th percentile,6084,280,500,153,5151,35.8974358974359,35.33487297921478,30.010718113612004
+72,station-specific training-period 90th percentile,6084,252,528,154,5150,32.30769230769231,37.93103448275862,26.980728051391864

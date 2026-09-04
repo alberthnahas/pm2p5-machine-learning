@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.part
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Source-like and reproducible large artifacts are intentionally not published.
+data/derived/
+data/external/
+models/research/
+models/deployment/
+reports/rendered_pages/
+
+# Local execution and compilation logs can contain machine-specific details.
+provenance/*.log
+provenance/report_extracted_text.txt

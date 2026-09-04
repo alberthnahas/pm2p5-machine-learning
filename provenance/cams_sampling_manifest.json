@@ -1,0 +1,277 @@
+{
+  "conversion": {
+    "PM2.5": "kg m-3 multiplied by 1e9 to micrograms m-3"
+  },
+  "external_acquisition_manifest": {
+    "chunks": [
+      {
+        "bytes": 304582,
+        "coverage_pct": 100.0,
+        "downloaded_this_invocation": false,
+        "elapsed_seconds_this_invocation": 0.09123626800101192,
+        "maximum_expected_rows": 14904,
+        "path": "chunks/cams_station_samples_20230101_20230402.csv.gz",
+        "period_end": "2023-04-02",
+        "period_start": "2023-01-01",
+        "rows": 14904,
+        "sha256": "30230f8b463b10f7047bfa6341de8d12617dcdd6d346eee7ac15da1cab2d39ed"
+      },
+      {
+        "bytes": 306953,
+        "coverage_pct": 100.0,
+        "downloaded_this_invocation": false,
+        "elapsed_seconds_this_invocation": 0.07782982000026095,
+        "maximum_expected_rows": 14904,
+        "path": "chunks/cams_station_samples_20230403_20230703.csv.gz",
+        "period_end": "2023-07-03",
+        "period_start": "2023-04-03",
+        "rows": 14904,
+        "sha256": "879398e28fcfd4732d6c532a48f831ff6632fbac8b3fe122f82fd61c5b9fa31c"
+      },
+      {
+        "bytes": 307095,
+        "coverage_pct": 100.0,
+        "downloaded_this_invocation": false,
+        "elapsed_seconds_this_invocation": 0.08381916500002262,
+        "maximum_expected_rows": 14904,
+        "path": "chunks/cams_station_samples_20230704_20231003.csv.gz",
+        "period_end": "2023-10-03",
+        "period_start": "2023-07-04",
+        "rows": 14904,
+        "sha256": "0ce251806862574bb3806187397d3c9ba328106100efe47c7cbb21700ad7bcc5"
+      },
+      {
+        "bytes": 306480,
+        "coverage_pct": 100.0,
+        "downloaded_this_invocation": false,
+        "elapsed_seconds_this_invocation": 0.08067312599996512,
+        "maximum_expected_rows": 14904,
+        "path": "chunks/cams_station_samples_20231004_20240103.csv.gz",
+        "period_end": "2024-01-03",
+        "period_start": "2023-10-04",
+        "rows": 14904,
+        "sha256": "04a1256ed22fba432ba9cab9d8bb62749a1e797265e42d70415bddd53a1621d0"
+      },
+      {
+        "bytes": 285972,
+        "coverage_pct": 94.36392914653784,
+        "downloaded_this_invocation": false,
+        "elapsed_seconds_this_invocation": 0.06696541199926287,
+        "maximum_expected_rows": 14904,
+        "path": "chunks/cams_station_samples_20240104_20240404.csv.gz",
+        "period_end": "2024-04-04",
+        "period_start": "2024-01-04",
+        "rows": 14064,
+        "sha256": "86feed590cfcc6f857705c0060666ea3622ba4f69ecfbfe1a9b70de89f68ddf1"
+      },
+      {
+        "bytes": 305566,
+        "coverage_pct": 100.0,
+        "downloaded_this_invocation": false,
+        "elapsed_seconds_this_invocation": 0.07734372500090103,
+        "maximum_expected_rows": 14904,
+        "path": "chunks/cams_station_samples_20240405_20240705.csv.gz",
+        "period_end": "2024-07-05",
+        "period_start": "2024-04-05",
+        "rows": 14904,
+        "sha256": "7200f3a6ee825604c5129bc255aaf4197345a4307afc069a497f43433733150a"
+      },
+      {
+        "bytes": 306230,
+        "coverage_pct": 100.0,
+        "downloaded_this_invocation": false,
+        "elapsed_seconds_this_invocation": 0.0595240950005973,
+        "maximum_expected_rows": 14904,
+        "path": "chunks/cams_station_samples_20240706_20241005.csv.gz",
+        "period_end": "2024-10-05",
+        "period_start": "2024-07-06",
+        "rows": 14904,
+        "sha256": "7de866c3db4ce2fcef53e153b3c76dd23c97af518c6638fc94f43d807eb6aea6"
+      },
+      {
+        "bytes": 306806,
+        "coverage_pct": 100.0,
+        "downloaded_this_invocation": false,
+        "elapsed_seconds_this_invocation": 0.06116855500113161,
+        "maximum_expected_rows": 14904,
+        "path": "chunks/cams_station_samples_20241006_20250105.csv.gz",
+        "period_end": "2025-01-05",
+        "period_start": "2024-10-06",
+        "rows": 14904,
+        "sha256": "366c3e389a4e5ea56583c1ebdd44215a1930fc1f364826f5f62c643066c3ac34"
+      },
+      {
+        "bytes": 306237,
+        "coverage_pct": 100.0,
+        "downloaded_this_invocation": false,
+        "elapsed_seconds_this_invocation": 0.05923534700013988,
+        "maximum_expected_rows": 14904,
+        "path": "chunks/cams_station_samples_20250106_20250407.csv.gz",
+        "period_end": "2025-04-07",
+        "period_start": "2025-01-06",
+        "rows": 14904,
+        "sha256": "2b9f7538239d2e9c1d4185dfad6c178198de078f3b9489416112a03c78aa04b3"
+      },
+      {
+        "bytes": 304151,
+        "coverage_pct": 98.91304347826087,
+        "downloaded_this_invocation": false,
+        "elapsed_seconds_this_invocation": 0.06066167400058475,
+        "maximum_expected_rows": 14904,
+        "path": "chunks/cams_station_samples_20250408_20250708.csv.gz",
+        "period_end": "2025-07-08",
+        "period_start": "2025-04-08",
+        "rows": 14742,
+        "sha256": "9e1a18ad2ed1449dde49976ed3d0224de280ee4b1028842ed81f969ec5ff8fff"
+      },
+      {
+        "bytes": 308595,
+        "coverage_pct": 100.0,
+        "downloaded_this_invocation": false,
+        "elapsed_seconds_this_invocation": 0.06459035199986829,
+        "maximum_expected_rows": 14904,
+        "path": "chunks/cams_station_samples_20250709_20251008.csv.gz",
+        "period_end": "2025-10-08",
+        "period_start": "2025-07-09",
+        "rows": 14904,
+        "sha256": "9079601ae6f6089fec6c71d2279202662c5187843e05dd63ac2698094463cd86"
+      },
+      {
+        "bytes": 307699,
+        "coverage_pct": 100.0,
+        "downloaded_this_invocation": false,
+        "elapsed_seconds_this_invocation": 0.06458544400084065,
+        "maximum_expected_rows": 14904,
+        "path": "chunks/cams_station_samples_20251009_20260108.csv.gz",
+        "period_end": "2026-01-08",
+        "period_start": "2025-10-09",
+        "rows": 14904,
+        "sha256": "93e5ad148143809a3a4f2b4b31760bb8d1db6168697b2b12b77ae5f18cf3a7fc"
+      },
+      {
+        "bytes": 307308,
+        "coverage_pct": 100.0,
+        "downloaded_this_invocation": false,
+        "elapsed_seconds_this_invocation": 0.06178673800059187,
+        "maximum_expected_rows": 14904,
+        "path": "chunks/cams_station_samples_20260109_20260410.csv.gz",
+        "period_end": "2026-04-10",
+        "period_start": "2026-01-09",
+        "rows": 14904,
+        "sha256": "0d47ebcfc180c6f5291b2f3ea843efc135770af2dbe3f8709f36e31493bda3e0"
+      },
+      {
+        "bytes": 306816,
+        "coverage_pct": 100.0,
+        "downloaded_this_invocation": false,
+        "elapsed_seconds_this_invocation": 0.0702703669994662,
+        "maximum_expected_rows": 14904,
+        "path": "chunks/cams_station_samples_20260411_20260711.csv.gz",
+        "period_end": "2026-07-11",
+        "period_start": "2026-04-11",
+        "rows": 14904,
+        "sha256": "048f38fcd21532670ad1b46c6624b984dc91c7dc9e2b7276b3aa20fd5001afc8"
+      },
+      {
+        "bytes": 173614,
+        "coverage_pct": 100.0,
+        "downloaded_this_invocation": false,
+        "elapsed_seconds_this_invocation": 0.04009165900060907,
+        "maximum_expected_rows": 8262,
+        "path": "chunks/cams_station_samples_20260712_20260831.csv.gz",
+        "period_end": "2026-08-31",
+        "period_start": "2026-07-12",
+        "rows": 8262,
+        "sha256": "b944586152d4898175638da40c2dda330436ac3656f00d54dfcf8f9198d6ab40"
+      }
+    ],
+    "conversion": "kg m-3 multiplied by 1e9 to micrograms m-3",
+    "coverage_pct": 99.53807429535586,
+    "earth_engine_collection": "ECMWF/CAMS/NRT",
+    "forecast_hours": [
+      3,
+      6,
+      12,
+      24,
+      48,
+      72
+    ],
+    "issue_cycle_utc": 0,
+    "maximum_expected_rows": 216918,
+    "missing_inventory": {
+      "bytes": 38120,
+      "path": "missing_station_issue_leads.csv",
+      "sha256": "64ddfd2481a14bb8b8d5e9e2f08ecf8c576095d804f3626892cdbb16510e9385"
+    },
+    "missing_issue_times": [
+      {
+        "issue_time_utc": "2024-02-17T00:00:00+00:00",
+        "missing_station_leads": 120
+      },
+      {
+        "issue_time_utc": "2024-02-18T00:00:00+00:00",
+        "missing_station_leads": 120
+      },
+      {
+        "issue_time_utc": "2024-02-19T00:00:00+00:00",
+        "missing_station_leads": 120
+      },
+      {
+        "issue_time_utc": "2024-02-20T00:00:00+00:00",
+        "missing_station_leads": 120
+      },
+      {
+        "issue_time_utc": "2024-02-21T00:00:00+00:00",
+        "missing_station_leads": 120
+      },
+      {
+        "issue_time_utc": "2024-02-22T00:00:00+00:00",
+        "missing_station_leads": 120
+      },
+      {
+        "issue_time_utc": "2024-02-23T00:00:00+00:00",
+        "missing_station_leads": 120
+      },
+      {
+        "issue_time_utc": "2025-06-30T00:00:00+00:00",
+        "missing_station_leads": 162
+      }
+    ],
+    "missing_station_issue_leads": 1002,
+    "output": "cams_station_forecasts_20230101_20260831.csv.gz",
+    "output_bytes": 4768190,
+    "output_sha256": "55fb735e1133b4094a97651523b2488bdde7e4c076961a7c16156e13f1b7abfc",
+    "period_end": "2026-08-31",
+    "period_start": "2023-01-01",
+    "retrieved_or_verified_utc": "2026-09-04T09:54:47.180753+00:00",
+    "rows": 215916,
+    "sampling": "bilinear resampling at station coordinates",
+    "source_band": "particulate_matter_d_less_than_25_um_surface",
+    "source_name": "CAMS Global Near-Real-Time official Earth Engine mirror",
+    "source_units": "kg m-3",
+    "source_url": "https://developers.google.com/earth-engine/datasets/catalog/ECMWF_CAMS_NRT",
+    "stations": 27
+  },
+  "forecast_hours": [
+    3,
+    6,
+    12,
+    24,
+    48,
+    72
+  ],
+  "generated_utc": "2026-09-04T10:38:48.761747+00:00",
+  "interpolation": "bilinear at supplied station coordinates",
+  "issue_end_utc": "2026-08-31T00:00:00+00:00",
+  "issue_start_utc": "2023-01-01T00:00:00+00:00",
+  "provider": "official Earth Engine mirror of ECMWF/CAMS/NRT",
+  "rows": 215916,
+  "source_files": [
+    {
+      "bytes": 4768190,
+      "path": "data/external/cams_earth_engine/cams_station_forecasts_20230101_20260831.csv.gz",
+      "sha256": "55fb735e1133b4094a97651523b2488bdde7e4c076961a7c16156e13f1b7abfc"
+    }
+  ],
+  "stations": 27
+}

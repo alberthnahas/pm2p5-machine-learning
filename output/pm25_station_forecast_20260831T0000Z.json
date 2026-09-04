@@ -1,0 +1,21 @@
+{
+  "degraded_rows": 0,
+  "deployment_manifest_sha256": "6d5dbb5dbfa15a25968984efc0aa8eaff3c010e353511b19db32950702c2787f",
+  "elapsed_seconds_excluding_metadata_write": 2.1322606789999554,
+  "forecast_hours": [
+    3,
+    6,
+    12,
+    24,
+    48,
+    72
+  ],
+  "generated_utc": "2026-09-04T10:42:39.109113+00:00",
+  "issue_time_utc": "2026-08-31T00:00:00+00:00",
+  "output": "output/pm25_station_forecast_20260831T0000Z.csv",
+  "output_sha256": "126fb93d1c3fc8d636d6832ef5507a7a342f41b4b4acafcf56a4b1ca6af2ab8f",
+  "primary_rows": 162,
+  "rows": 162,
+  "stale_observation_rows": 0,
+  "stations": 27
+}

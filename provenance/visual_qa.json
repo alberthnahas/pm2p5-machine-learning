@@ -1,0 +1,27 @@
+{
+  "inspected_utc": "2026-09-04T10:57:50Z",
+  "method": "contact-sheet review followed by full-resolution inspection of corrected body and table typography, methods/results tables, operational-design page, and landscape station table",
+  "figure_manifest_sha256": "9efa60362b935d4d8502f35a079a841837d6125f0ee935c4a6a9286e3cc05c00",
+  "figures_inspected": [
+    "figure_01_observation_coverage",
+    "figure_02_test_performance",
+    "figure_03_station_skill",
+    "figure_04_observed_vs_predicted",
+    "figure_05_prediction_intervals",
+    "figure_06_high_event_detection",
+    "figure_07_feature_importance",
+    "figure_08_station_transfer",
+    "figure_09_residual_bias"
+  ],
+  "pdf_sha256": "6a1c03cdfa10f3f2615edb08a941b5b5c08f4fa060d589ee26f8ccc9eda94c2d",
+  "pdf_pages_inspected": 13,
+  "checks": {
+    "no_clipped_content": true,
+    "no_overlapping_content": true,
+    "labels_legible_at_full_render": true,
+    "landscape_station_table_legible": true,
+    "color_encoding_consistent_with_captions": true,
+    "missing_data_visually_distinct_from_zero": true
+  },
+  "status": "pass"
+}

@@ -1,0 +1,37 @@
+{
+  "cams_complete_by_split_pct": {
+    "test": 100.0,
+    "train": 99.15387343567919,
+    "validation": 99.72602739726028
+  },
+  "cams_complete_pct": 99.4633916964014,
+  "cams_complete_rows": 215754,
+  "duplicate_keys": 0,
+  "forecast_hours": [
+    3,
+    6,
+    12,
+    24,
+    48,
+    72
+  ],
+  "negative_lag_feature_definitions": 0,
+  "rows": 216918,
+  "split_rows": {
+    "test": 39366,
+    "train": 118422,
+    "validation": 59130
+  },
+  "split_valid_targets": {
+    "test": 36315,
+    "train": 111439,
+    "validation": 52970
+  },
+  "stations": 27,
+  "target_before_or_at_issue": 0,
+  "train_test_target_time_overlap": 0,
+  "train_validation_target_time_overlap": 0,
+  "valid_target_pct": 92.53450612673913,
+  "valid_target_rows": 200724,
+  "validation_test_target_time_overlap": 0
+}
