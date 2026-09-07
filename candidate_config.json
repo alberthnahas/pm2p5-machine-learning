@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "candidate_version": "pm25_no_met_10utc_v1",
+  "declared_utc": "2026-09-07T03:15:00Z",
+  "development_only": true,
+  "independent_acceptance_start": "after_candidate_freeze",
+  "random_seed": 20260907,
+  "nominal_interval_coverage": 0.8,
+  "cams_initialization_hour_utc": 0,
+  "observation_asof_hour_utc": 10,
+  "lead_mapping_hours": {
+    "12": 2,
+    "24": 14,
+    "48": 38,
+    "72": 62
+  },
+  "variants": [
+    "all_features_00utc_expanding",
+    "no_met_00utc_expanding",
+    "no_met_10utc_expanding"
+  ],
+  "folds": [
+    {"fold": 1, "fit_end": "2025-10-31T23:00:00Z", "tune_start": "2025-11-01T00:00:00Z", "tune_end": "2025-11-30T23:00:00Z", "calibration_start": "2025-12-01T00:00:00Z", "calibration_end": "2025-12-31T23:00:00Z", "assessment_start": "2026-01-01T00:00:00Z", "assessment_end": "2026-02-28T23:00:00Z"},
+    {"fold": 2, "fit_end": "2025-12-31T23:00:00Z", "tune_start": "2026-01-01T00:00:00Z", "tune_end": "2026-01-31T23:00:00Z", "calibration_start": "2026-02-01T00:00:00Z", "calibration_end": "2026-02-28T23:00:00Z", "assessment_start": "2026-03-01T00:00:00Z", "assessment_end": "2026-04-30T23:00:00Z"},
+    {"fold": 3, "fit_end": "2026-02-28T23:00:00Z", "tune_start": "2026-03-01T00:00:00Z", "tune_end": "2026-03-31T23:00:00Z", "calibration_start": "2026-04-01T00:00:00Z", "calibration_end": "2026-04-30T23:00:00Z", "assessment_start": "2026-05-01T00:00:00Z", "assessment_end": "2026-06-30T23:00:00Z"},
+    {"fold": 4, "fit_end": "2026-04-30T23:00:00Z", "tune_start": "2026-05-01T00:00:00Z", "tune_end": "2026-05-31T23:00:00Z", "calibration_start": "2026-06-01T00:00:00Z", "calibration_end": "2026-06-30T23:00:00Z", "assessment_start": "2026-07-01T00:00:00Z", "assessment_end": "2026-08-31T23:00:00Z"}
+  ],
+  "final_fit_target_end": "2026-06-30T23:00:00Z",
+  "final_calibration_start": "2026-07-01T00:00:00Z",
+  "final_calibration_end": "2026-08-31T23:00:00Z",
+  "bootstrap_replicates": 1000,
+  "compute_budget_minutes": 20
+}

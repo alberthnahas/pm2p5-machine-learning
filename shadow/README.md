@@ -10,8 +10,10 @@ PM₂.₅ deployment model. The daily job:
    Atmosphere Data Store and samples it at all 27 stations;
 4. freezes issue-time predictors, runs the versioned deployment bundle, and
 labels rows generated after their target time;
-5. matches earlier forecasts with observations only after those observations
-   appear and refreshes a lead-specific scorecard.
+5. after 10 UTC, independently attempts the frozen candidate using complete
+   CAMS coverage at all 27 stations and 10 UTC observation features;
+6. matches earlier forecasts with observations only after those observations
+   appear and refreshes bundle-, role-, and lead-specific scorecards.
 
 Forecasts, inputs, raw snapshots, and verification rows are retained
 indefinitely during the initial 60–90-day evaluation. There is no public upload
@@ -24,6 +26,13 @@ structured run records to `logs/runs.jsonl`. `state/latest_run.json` is the
 machine-readable health record. Missing CAMS produces an explicitly degraded
 observation-only forecast; schema or feature-construction failure exits
 non-zero.
+
+Candidate outputs and failures are isolated from the frozen forecast. A failed
+candidate attempt records a separate state file and is retried on the next run
+even when the frozen forecast already exists. Candidate forecasts identify both
+the point-model and interval versions, use the 10 UTC observation time for
+freshness, and cannot become duty-service or public-service eligible
+automatically.
 
 Manual run:
 

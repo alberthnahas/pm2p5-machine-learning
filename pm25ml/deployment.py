@@ -25,6 +25,160 @@ from .modeling import (
 )
 
 
+REQUIRED_MODEL_ROLES = {
+    "primary_point",
+    "observation_only_fallback",
+    "quantile_10",
+    "quantile_50",
+    "quantile_90",
+}
+
+
+def _validated_deployment_bundle(
+    paths: ExperimentPaths, config: dict[str, Any]
+) -> tuple[dict[str, Any], str, dict[tuple[str, int], Path]]:
+    """Validate every executable artifact before any joblib deserialization."""
+
+    manifest_path = paths.provenance / "deployment_model_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if int(manifest.get("schema_version", -1)) != 1:
+        raise ValueError("Unsupported deployment manifest schema_version")
+    if manifest.get("config_sha256") != file_sha256(paths.config):
+        raise ValueError("Deployment manifest config checksum mismatch")
+    research_path = paths.provenance / "research_model_manifest.json"
+    expected_research_hash = manifest.get("research_manifest_sha256")
+    if expected_research_hash is not None:
+        if not research_path.exists() or file_sha256(research_path) != expected_research_hash:
+            raise ValueError("Deployment manifest research checksum mismatch")
+
+    configured_hours = [int(value) for value in config["forecast_hours"]]
+    if [int(value) for value in manifest.get("forecast_hours", [])] != configured_hours:
+        raise ValueError("Deployment manifest forecast hours differ from configuration")
+    model_rows = manifest.get("models")
+    if not isinstance(model_rows, list):
+        raise ValueError("Deployment manifest models must be a list")
+    lookup: dict[tuple[str, int], Path] = {}
+    root = paths.root.resolve()
+    for row in model_rows:
+        role = str(row.get("role", ""))
+        horizon = int(row.get("forecast_hour", -1))
+        key = (role, horizon)
+        if role not in REQUIRED_MODEL_ROLES or horizon not in configured_hours:
+            raise ValueError(f"Unexpected deployment model key: {key}")
+        if key in lookup:
+            raise ValueError(f"Duplicate deployment model key: {key}")
+        relative = Path(str(row.get("path", "")))
+        model_path = (paths.root / relative).resolve()
+        if not model_path.is_relative_to(root):
+            raise ValueError(f"Deployment model path escapes experiment root: {relative}")
+        if not model_path.is_file():
+            raise ValueError(f"Deployment model is absent: {relative}")
+        if model_path.stat().st_size != int(row.get("bytes", -1)):
+            raise ValueError(f"Deployment model byte-size mismatch: {relative}")
+        if file_sha256(model_path) != str(row.get("sha256", "")):
+            raise ValueError(f"Deployment model checksum mismatch: {relative}")
+        source_columns = row.get("source_columns")
+        if not isinstance(source_columns, list) or not source_columns:
+            raise ValueError(f"Deployment model source columns are invalid: {key}")
+        lookup[key] = model_path
+    expected = {
+        (role, horizon)
+        for role in REQUIRED_MODEL_ROLES
+        for horizon in configured_hours
+    }
+    if set(lookup) != expected:
+        missing = sorted(expected.difference(lookup))
+        raise ValueError(f"Deployment manifest model coverage is incomplete: {missing}")
+    corrections = manifest.get("interval_calibration", {}).get(
+        "correction_ug_m3", {}
+    )
+    if set(map(int, corrections)) != set(configured_hours) or not all(
+        np.isfinite(float(value)) and float(value) >= 0 for value in corrections.values()
+    ):
+        raise ValueError("Deployment interval corrections are invalid or incomplete")
+    return manifest, file_sha256(manifest_path), lookup
+
+
+def _validate_inference_inputs(
+    issue_features: pd.DataFrame,
+    cams: pd.DataFrame,
+    issue_time: pd.Timestamp,
+    config: dict[str, Any],
+    required_feature_columns: set[str],
+) -> None:
+    generated_columns = {
+        "cams_pm25_ug_m3",
+        "target_hour_local",
+        "target_hour_local_sin",
+        "target_hour_local_cos",
+        "target_day_of_year_sin",
+        "target_day_of_year_cos",
+        "target_month",
+    }
+    required_issue = {
+        "timestamp_utc",
+        "station_code",
+        "station_name",
+        "province",
+        "region",
+        "timezone",
+        "utc_offset_hours",
+        "latest_pm25_age_hours",
+        *required_feature_columns.difference(generated_columns),
+    }
+    missing_issue = required_issue.difference(issue_features.columns)
+    if missing_issue:
+        raise ValueError(f"Issue features lack columns: {sorted(missing_issue)}")
+    selected = issue_features.loc[issue_features.timestamp_utc.eq(issue_time)]
+    if selected.empty:
+        raise ValueError(f"No issue-time observation features at {issue_time.isoformat()}")
+    if selected.station_code.isna().any() or selected.station_code.astype(str).str.strip().eq("").any():
+        raise ValueError("Issue features contain a missing station identifier")
+    if selected.duplicated(["station_code", "timestamp_utc"]).any():
+        raise ValueError("Issue features contain duplicate station/time keys")
+    for column, lower, upper in (
+        ("latitude", -90.0, 90.0),
+        ("longitude", -180.0, 180.0),
+        ("utc_offset_hours", -12.0, 14.0),
+    ):
+        if column in required_feature_columns or column == "utc_offset_hours":
+            values = pd.to_numeric(selected[column], errors="coerce")
+            if not np.isfinite(values).all() or not values.between(lower, upper).all():
+                raise ValueError(f"Issue feature {column} is non-finite or outside bounds")
+
+    if cams.empty:
+        return
+    required_cams = {
+        "station_code",
+        "issue_time_utc",
+        "valid_time_utc",
+        "forecast_hour",
+        "cams_pm25_ug_m3",
+    }
+    missing_cams = required_cams.difference(cams.columns)
+    if missing_cams:
+        raise ValueError(f"CAMS input lacks columns: {sorted(missing_cams)}")
+    subset = cams.loc[cams.issue_time_utc.eq(issue_time)].copy()
+    if subset.duplicated(["station_code", "issue_time_utc", "forecast_hour"]).any():
+        raise ValueError("CAMS input contains duplicate station/issue/lead keys")
+    if not set(subset.forecast_hour.astype(int)).issubset(
+        set(map(int, config["forecast_hours"]))
+    ):
+        raise ValueError("CAMS input contains an unsupported forecast hour")
+    expected_valid = subset.issue_time_utc + pd.to_timedelta(
+        subset.forecast_hour, unit="h"
+    )
+    if not expected_valid.eq(subset.valid_time_utc).all():
+        raise ValueError("CAMS input issue/lead/valid-time mismatch")
+    values = pd.to_numeric(subset.cams_pm25_ug_m3, errors="coerce")
+    if not np.isfinite(values).all() or values.lt(0).any():
+        raise ValueError("CAMS input contains non-finite or negative PM2.5")
+    if not set(subset.station_code.astype(str)).issubset(
+        set(selected.station_code.astype(str))
+    ):
+        raise ValueError("CAMS input contains a station absent from issue features")
+
+
 def _research_model_lookup(manifest: dict[str, Any]) -> dict[tuple[str, int], dict[str, Any]]:
     return {
         (str(row["model"]), int(row["forecast_hour"])): row
@@ -405,10 +559,8 @@ def run_operational_forecast(
     started = time.perf_counter()
     paths = paths or ExperimentPaths()
     config = load_config(paths.config)
-    manifest = json.loads(
-        (paths.provenance / "deployment_model_manifest.json").read_text(
-            encoding="utf-8"
-        )
+    manifest, deployment_bundle_id, validated_model_paths = (
+        _validated_deployment_bundle(paths, config)
     )
     issue_features = (
         issue_features_frame.copy()
@@ -432,6 +584,8 @@ def run_operational_forecast(
         )
     )
     cams["issue_time_utc"] = pd.to_datetime(cams.issue_time_utc, utc=True)
+    if "valid_time_utc" in cams:
+        cams["valid_time_utc"] = pd.to_datetime(cams.valid_time_utc, utc=True)
     if issue_time is None:
         common_times = set(issue_features.timestamp_utc.unique()).intersection(
             cams.issue_time_utc.unique()
@@ -448,9 +602,26 @@ def run_operational_forecast(
         raise ValueError(
             f"Issue hour {selected_issue.hour:02d} UTC was not historically validated"
         )
+    required_feature_columns = {
+        str(column)
+        for row in manifest["models"]
+        for column in row["source_columns"]
+    }
+    _validate_inference_inputs(
+        issue_features,
+        cams,
+        selected_issue,
+        config,
+        required_feature_columns,
+    )
     frame = _build_inference_rows(
         issue_features, cams, selected_issue, config
     )
+    missing_generated = required_feature_columns.difference(frame.columns)
+    if missing_generated:
+        raise ValueError(
+            f"Assembled inference frame lacks model columns: {sorted(missing_generated)}"
+        )
     model_lookup = {
         (str(row["role"]), int(row["forecast_hour"])): row
         for row in manifest["models"]
@@ -466,8 +637,23 @@ def run_operational_forecast(
         horizon = int(horizon)
         primary_meta = model_lookup[("primary_point", horizon)]
         fallback_meta = model_lookup[("observation_only_fallback", horizon)]
-        primary: TrainedModel = joblib.load(paths.root / primary_meta["path"])
-        fallback: TrainedModel = joblib.load(paths.root / fallback_meta["path"])
+        primary: TrainedModel = joblib.load(
+            validated_model_paths[("primary_point", horizon)]
+        )
+        fallback: TrainedModel = joblib.load(
+            validated_model_paths[("observation_only_fallback", horizon)]
+        )
+        for role, loaded, meta in (
+            ("primary_point", primary, primary_meta),
+            ("observation_only_fallback", fallback, fallback_meta),
+        ):
+            if (
+                loaded.forecast_hour != horizon
+                or loaded.feature_columns != meta["encoded_columns"]
+            ):
+                raise ValueError(
+                    f"Deserialized deployment model identity mismatch: {(role, horizon)}"
+                )
         primary_prediction = predict_model(
             primary, horizon_frame, primary_meta["source_columns"]
         )
@@ -484,7 +670,14 @@ def run_operational_forecast(
         q_values: list[np.ndarray] = []
         for role in ("quantile_10", "quantile_50", "quantile_90"):
             meta = model_lookup[(role, horizon)]
-            model: TrainedModel = joblib.load(paths.root / meta["path"])
+            model: TrainedModel = joblib.load(validated_model_paths[(role, horizon)])
+            if (
+                model.forecast_hour != horizon
+                or model.feature_columns != meta["encoded_columns"]
+            ):
+                raise ValueError(
+                    f"Deserialized deployment model identity mismatch: {(role, horizon)}"
+                )
             q_values.append(predict_model(model, horizon_frame, meta["source_columns"]))
         ordered = np.sort(np.column_stack(q_values), axis=1)
         correction = corrections[horizon]
@@ -517,12 +710,23 @@ def run_operational_forecast(
         output["prediction_q50_ug_m3"] = q50
         output["prediction_q90_ug_m3"] = q90
         output["forecast_status"] = status
+        output["model_bundle_id"] = deployment_bundle_id
+        output["point_model_role"] = np.where(
+            use_primary, "primary_point", "observation_only_fallback"
+        )
+        output["point_model_sha256"] = np.where(
+            use_primary,
+            str(primary_meta["sha256"]),
+            str(fallback_meta["sha256"]),
+        )
         outputs.append(output)
     result = pd.concat(outputs, ignore_index=True).sort_values(
         ["station_code", "forecast_hour"]
     )
-    if (result.forecast_pm25_ug_m3 < 0).any():
-        raise ValueError("Operational output contains a negative PM2.5 forecast")
+    if not np.isfinite(result.forecast_pm25_ug_m3).all() or (
+        result.forecast_pm25_ug_m3 < 0
+    ).any():
+        raise ValueError("Operational output contains non-finite or negative PM2.5")
     valid_intervals = result.dropna(
         subset=["prediction_q10_ug_m3", "prediction_q50_ug_m3", "prediction_q90_ug_m3"]
     )
@@ -551,6 +755,8 @@ def run_operational_forecast(
         "rows": len(result),
         "stations": int(result.station_code.nunique()),
         "forecast_hours": sorted(result.forecast_hour.unique().tolist()),
+        "model_bundle_id": deployment_bundle_id,
+        "research_champion": manifest["research_champion"],
         "primary_rows": int(result.forecast_status.str.startswith("primary").sum()),
         "degraded_rows": int(
             result.forecast_status.str.startswith("observation_only_fallback").sum()
@@ -561,7 +767,11 @@ def run_operational_forecast(
         "deployment_manifest_sha256": file_sha256(
             paths.provenance / "deployment_model_manifest.json"
         ),
-        "output": str(output_path.relative_to(paths.root)),
+        "output": (
+            str(output_path.relative_to(paths.root))
+            if output_path.is_relative_to(paths.root)
+            else str(output_path.resolve())
+        ),
         "output_sha256": file_sha256(output_path),
         "elapsed_seconds_excluding_metadata_write": time.perf_counter() - started,
     }

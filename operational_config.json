@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "observation_fresh_max_hours": 6,
+  "frozen_service_initialization_horizons_hours": [12, 24, 48, 72],
+  "promotion_gate": {
+    "minimum_days": 60,
+    "minimum_stations_per_lead": 20,
+    "minimum_rows_per_station_lead": 30,
+    "minimum_skill_from_station_balanced_mae_pct": 5.0,
+    "maximum_harmed_station_fraction": 0.25,
+    "interval_coverage_minimum_pct": 70.0,
+    "interval_coverage_maximum_pct": 90.0,
+    "maximum_failed_cycle_fraction": 0.1
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "validated_utc": "2026-09-07T02:58:06.772940Z",
+  "dataset": "cams-global-atmospheric-composition-forecasts",
+  "source_url": "https://ads.atmosphere.copernicus.eu/datasets/cams-global-atmospheric-composition-forecasts?tab=overview",
+  "documentation_url": "https://confluence.ecmwf.int/pages/viewpage.action?pageId=673323626",
+  "documentation_findings": {
+    "00utc_guaranteed_availability_utc": "10:00",
+    "ads_grid": "regular 0.4 degree latitude-longitude",
+    "grid_request_keyword_supported": false,
+    "surface_forecast_temporal_resolution": "hourly",
+    "netcdf_status": "experimental"
+  },
+  "request_without_credentials": {
+    "area": [1.0, 100.0, 0.2, 100.8],
+    "data_format": "netcdf_zip",
+    "date": "2026-09-06",
+    "leadtime_hour": ["24"],
+    "time": ["00:00"],
+    "type": "forecast",
+    "variable": ["particulate_matter_2.5um"]
+  },
+  "request_limits": {
+    "network_timeout_seconds": 60,
+    "network_retry_max": 2,
+    "shell_overall_timeout_seconds": 180
+  },
+  "response": {
+    "bytes": 29126,
+    "sha256": "92886382975875f1a80970c5ac28eac6bba32663acb404d27720b30ad0d76fe2",
+    "valid_zip": true,
+    "member": "data_sfc.nc",
+    "dimensions": {"forecast_period": 1, "forecast_reference_time": 1, "latitude": 2, "longitude": 3},
+    "variable": "pm2p5",
+    "units": "kg m**-3",
+    "forecast_reference_time_utc": "2026-09-06T00:00:00Z",
+    "forecast_period_hours": 24,
+    "latitude_range_degrees_north": [0.4, 0.8],
+    "longitude_range_degrees_east": [100.0, 100.8],
+    "finite_values": true,
+    "minimum_kg_m3": 1.6322704965432422e-08,
+    "maximum_kg_m3": 1.1974951519277965e-07
+  },
+  "interpretation": "The latest already-published 2026-09-06 cycle validates the current endpoint, request schema, archive, coordinates, units and requested lead. It does not identify the cause of the earlier 2026-09-05 and 2026-09-06 HTTP 400 responses; delayed cycle availability is plausible but unproven. The 2026-09-07 00 UTC cycle was not yet guaranteed available when this check ran."
+}

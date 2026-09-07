@@ -7,12 +7,14 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+import pytest
 from sklearn.dummy import DummyRegressor
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from pm25ml.data import ExperimentPaths  # noqa: E402
+from pm25ml.data import file_sha256  # noqa: E402
 from pm25ml.deployment import run_operational_forecast  # noqa: E402
 from pm25ml.modeling import TrainedModel  # noqa: E402
 
@@ -45,6 +47,8 @@ def test_operational_primary_and_fallback_statuses(tmp_path: Path) -> None:
         "forecast_cycle_hours_utc": [0],
     }
     (tmp_path / "config.json").write_text(json.dumps(config), encoding="utf-8")
+    research_path = paths.provenance / "research_model_manifest.json"
+    research_path.write_text('{"test": true}\n', encoding="utf-8")
     models = []
     for role, value in (
         ("primary_point", 20.0),
@@ -61,9 +65,17 @@ def test_operational_primary_and_fallback_statuses(tmp_path: Path) -> None:
                 "forecast_hour": 1,
                 "path": str(path.relative_to(tmp_path)),
                 "source_columns": ["pm25_lag_0h"],
+                "encoded_columns": ["pm25_lag_0h"],
+                "bytes": path.stat().st_size,
+                "sha256": file_sha256(path),
             }
         )
     manifest = {
+        "schema_version": 1,
+        "config_sha256": file_sha256(tmp_path / "config.json"),
+        "research_manifest_sha256": file_sha256(research_path),
+        "research_champion": "dummy",
+        "forecast_hours": [1],
         "primary_requires_cams_pm25": True,
         "interval_calibration": {"correction_ug_m3": {"1": 2.0}},
         "models": models,
@@ -109,3 +121,24 @@ def test_operational_primary_and_fallback_statuses(tmp_path: Path) -> None:
     assert output.loc["B", "forecast_status"] == "observation_only_fallback"
     assert metadata["primary_rows"] == 1
     assert metadata["degraded_rows"] == 1
+    assert output.model_bundle_id.nunique() == 1
+
+
+def test_model_checksum_tamper_rejected_before_unpickle(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    test_operational_primary_and_fallback_statuses(tmp_path)
+    model_path = tmp_path / "models" / "deployment" / "primary_point_001h.joblib"
+    with model_path.open("ab") as handle:
+        handle.write(b"tamper")
+    called = False
+
+    def forbidden_load(path: Path) -> object:
+        nonlocal called
+        called = True
+        raise AssertionError(f"unsafe load attempted for {path}")
+
+    monkeypatch.setattr(joblib, "load", forbidden_load)
+    with pytest.raises(ValueError, match="byte-size mismatch"):
+        run_operational_forecast("2026-01-01T00:00:00Z", paths=ExperimentPaths(tmp_path))
+    assert not called

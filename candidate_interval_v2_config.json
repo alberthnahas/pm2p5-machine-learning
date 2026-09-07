@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "interval_version": "pm25_no_met_10utc_interval_scale_v2",
+  "declared_utc": "2026-09-07T03:25:00Z",
+  "motivation": "Predeclared one-step correction after v1 symmetric intervals undercovered training-p90 high events.",
+  "point_candidate_version": "pm25_no_met_10utc_v1",
+  "nominal_coverage": 0.8,
+  "scale": "max(10 ug m-3, nonnegative point forecast, latest finite 10 UTC PM2.5)",
+  "calibration_score": "absolute residual divided by the pre-observation scale",
+  "calibration_blocks": "unchanged from candidate_config.json",
+  "point_models_and_folds": "unchanged from candidate_config.json",
+  "additional_model_or_hyperparameter_search": false
+}

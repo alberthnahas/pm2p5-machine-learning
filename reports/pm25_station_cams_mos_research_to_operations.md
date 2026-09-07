@@ -1,21 +1,24 @@
 # Research-to-operational hourly PM₂.₅ forecasting at 27 Indonesian stations
 
 **Experimental model-development report — not yet an operational public product**<br>
-**Evaluation completed:** 04 September 2026<br>
-**Forecast cycle evaluated:** 00 UTC daily<br>
-**Forecast leads:** +3, +6, +12, +24, +48, and +72 hours
+**Evaluation completed:** 07 September 2026<br>
+**Original forecast cycle:** 00 UTC daily<br>
+**Original forecast leads:** +3, +6, +12, +24, +48, and +72 hours<br>
+**Availability-aware development:** 10 UTC observation update at the same CAMS target times
 
 ## Executive finding
 
-The validation-selected model is **CAMS model-output-statistics LightGBM**. Across the six lead times in the untouched 1 January–31 August 2026 test period, its mean station-balanced mean absolute error (MAE) is **9.82 µg m⁻³**, corresponding to **+28.5%** mean skill relative to persistence and **+34.2%** relative to raw CAMS. Improvement occurs in **94.4%** of station–lead combinations, so aggregate skill does not imply uniform local benefit. The nominal 80% prediction intervals attain **78.8%** mean test coverage across leads.
+The original validation-selected model is **CAMS model-output-statistics LightGBM**. Across the six lead times in its frozen 1 January–31 August 2026 test, its mean station-balanced mean absolute error (MAE) is **9.82 µg m⁻³**, corresponding to **+28.5%** mean skill relative to persistence and **+34.2%** relative to raw CAMS. Improvement occurs in **94.4%** of station–lead combinations, so aggregate skill does not imply uniform local benefit. The nominal 80% prediction intervals attain **78.8%** mean test coverage across leads. Those results remain a fixed historical reference; the same 2026 dates are now reused for new candidate development and cannot provide a second independent test.
 
-**Operational decision:** retain the system as **pre-operational**. It is suitable for scheduled shadow forecasts and scorecard monitoring, but public or duty-forecaster reliance should wait for prospective evaluation, explicit input-latency tests, a second forecast cycle, and an assessment of forecast meteorology. The model provides prediction, not source attribution or causal explanation.
+The new 10 UTC observation-update candidate improves development MAE by 22.2–25.1% over fresh persistence at remaining leads of 2, 14, 38 and 62 h. Gains over the frozen model are smaller: strongest at 2 h, and inconclusive at 62 h. These are conditional archive comparisons on the previously examined 2026 dates; they do not establish real-time data availability or prospective skill. An input-scaled interval correction attains 79.4–81.8% overall coverage for a nominal 80%, but only 43.5–54.0% during observed high-concentration cases. Station-level regressions and high-event uncertainty still prevent operational acceptance.
+
+**Operational decision:** retain the system as **pre-operational**. Late acquisition and stale observation features reduce the advance notice and validity of the original daily product. Public or duty-forecaster reliance requires a frozen candidate with enough prospective, version-specific verification to meet declared skill, coverage, station-support and reliability criteria. A second CAMS cycle needs separate validation only if it is offered. The model provides prediction, not source attribution or causal explanation.
 
 ## 1. Question and intended use
 
 The question is whether a pooled machine-learning model can improve station-level hourly PM₂.₅ forecasts over simple persistence at 27 BMKG locations while remaining computationally light enough for routine operation. One direct model is fitted for each forecast lead; direct forecasting avoids recursive error propagation. The intended output is a concentration forecast in µg m⁻³ plus a calibrated uncertainty interval at each observed station.
 
-The primary inference domain is the existing network. A separate station-holdout experiment asks a harder question: how well the approach transfers to a location absent from fitting. Neither experiment creates a continuous spatial concentration field.
+The primary inference domain is the existing network. A separate station-holdout experiment asks a harder question: how well the approach transfers to a monitored location absent from fitting while its past observations remain available as predictors. It does not evaluate an unmonitored location. Neither experiment creates a continuous spatial concentration field.
 
 ## 2. Data, quality control, and provenance
 
@@ -39,7 +42,7 @@ Predictors use only timestamps at or before issue time: PM₂.₅ lags from 0 to
 
 ### 3.2 Chronological separation
 
-Targets from 2023–2024 form training, 2025 is used for point-model early stopping and model choice, and 2026 through 31 August is evaluated once as the final test. The uncertainty workflow adds a nested temporal separation: January–June 2025 is used only to tune quantile tree counts, while July–December 2025 is reserved exclusively for conformal calibration. Splits are assigned by target time, not issue time. The derived table contains **216,918** station–issue–lead rows and **200,724** valid targets. Automated audits found 0 duplicate modeling keys, 0 non-future targets, and no target-time overlap among train, validation, and test. Chronological and station-blocked validation are used because random splitting of structured environmental data can underestimate predictive error [6].
+For the original frozen comparison, targets from 2023–2024 form training, 2025 is used for point-model early stopping and model choice, and 2026 through 31 August was the final test opened after model selection. New candidates now reuse 2026 in chronological development folds; their independent evaluation must follow their freeze date. The original uncertainty workflow adds a nested temporal separation: January–June 2025 is used only to tune quantile tree counts, while July–December 2025 is reserved exclusively for conformal calibration. Splits are assigned by target time, not issue time. The derived table contains **216,918** station–issue–lead rows and **200,724** valid targets. Automated audits found 0 duplicate modeling keys, 0 non-future targets, and no target-time overlap among the original train, validation, and test. Chronological and station-blocked validation are used because random splitting of structured environmental data can underestimate predictive error [6].
 
 ### 3.3 Models and uncertainty
 
@@ -80,7 +83,7 @@ The selected model's validation criterion is **7.12 µg m⁻³**. The following 
 
 Aggregate errors do not show whether the forecast follows the timing of individual episodes, reacts late, or compresses peaks. Figure 4 therefore compares the observed and predicted +24 h sequences in their original target-time order. For readability, each point is the daily median across stations with valid data; no temporal smoothing or interpolation is applied.
 
-Training-period values are not fitted predictions. They use three expanding-window assessment blocks: July–December 2023, January–June 2024, and July–December 2024. Every assessment target is later than all targets used to fit its fold. However, the displayed model family and tree counts were selected later using 2025 validation, so this retrospective out-of-fold diagnostic describes temporal behaviour and must not be treated as an independent model-selection score. The 2025 panel is validation evidence and the 2026 panel remains the independent test.
+Training-period values are not fitted predictions. They use three expanding-window assessment blocks: July–December 2023, January–June 2024, and July–December 2024. Every assessment target is later than all targets used to fit its fold. However, the displayed model family and tree counts were selected later using 2025 validation, so this retrospective out-of-fold diagnostic describes temporal behaviour and must not be treated as an independent model-selection score. The 2025 panel is validation evidence and the 2026 panel preserves the original frozen-model test; it is not independent evidence for the subsequent candidates.
 
 ![Figure 4. Chronological observed, selected-model, and persistence PM₂.₅ at +24 h for expanding-window out-of-fold training assessments, validation, and independent testing. Values are daily station medians for the 00 UTC forecast cycle.](../figures/figure_04_chronological_comparison.png)
 
@@ -188,9 +191,9 @@ The operational command reads prepared issue-time features and forecast-valid CA
 
 The non-public shadow workflow is scheduled daily at 17:15 WIB (10:15 UTC). It saves an immutable BMKG dashboard snapshot, freezes the observation cutoff, acquires the current CAMS 00 UTC initialization directly from the Copernicus archive, writes atomic forecasts with hashes and freshness/status fields, and scores them only after observations appear. It retains first-seen station-hour values for verification and preserves later raw snapshots so revisions remain auditable. There is no public upload.
 
-The first end-to-end engineering run on 4 September 2026 generated **162 rows in 67.7 s** with **0 degraded rows**. It produced **108 prospectively eligible rows** and labelled **54 rows** whose target times had already occurred. This first execution is a workflow test, not a prospective performance result.
+The first three daily runs on 4–6 September 2026 produced 162 rows each. The 5–6 September runs could not obtain their CAMS cycle and used the degraded observation-only model. The exact cause of those archive rejections remains unresolved; later retrieval of the same initialization establishes subsequent availability, not availability at the original attempt.
 
-That engineering run completed **11.3 h after the 00 UTC initialization**. Observation freshness in the shadow output is therefore evaluated relative to actual generation time as well as model initialization; otherwise an observation timestamped at 00 UTC would be incorrectly described as fresh roughly eleven hours later.
+The original stored generation time marked the start of acquisition. Reassessed verification uses a recorded completion time or a conservative run-end upper bound, without rewriting historical forecasts. A timestamp that only bounds completion from below cannot establish that a forecast was available before its target. Observation freshness is assessed at completion, and remaining advance notice is target time minus completion time. Thus a nominal +24 h target generated at 10:15 UTC has only 13.75 h of advance notice, while a 00 UTC observation is already 10.25 h old. Rows with expired targets, stale inputs or uncertain completion are retained as diagnostics and excluded from service-qualified prospective scores.
 
 The operational sequence is:
 
@@ -201,11 +204,81 @@ The operational sequence is:
 5. Score forecasts when observations arrive; retain missing cases rather than backfilling them silently.
 6. Record warnings for missing CAMS, stale station data, schema/version changes, degraded operation, extreme residuals, and interval undercoverage.
 
+### 7.2 Availability-aware candidate development
+
+The model question changes when a forecast becomes available many hours after its initialization. The current dashboard supplies PM₂.₅ but no live temperature or relative humidity. A separately versioned candidate therefore omits those weather predictors and updates PM₂.₅ histories at 10 UTC. Its targets are unchanged: lead from 00 UTC / lead from the 10 UTC observation cutoff is +12 / +2 h, +24 / +14 h, +48 / +38 h, +72 / +62 h. Actual advance notice is shorter still by the time needed to acquire inputs and produce the forecast. This candidate is a station forecast, not an interpolation or a new CAMS cycle.
+
+Four fixed chronological assessment blocks cover January–February, March–April, May–June and July–August 2026. Each fold uses all available targets from January 2023 through three months before its assessment for initial fitting, the next month for tree-count selection, and the immediately preceding month exclusively for interval calibration. The point model is refitted on fitting plus tuning targets before calibration. For example, the first fold fits through October 2025, tunes in November, calibrates in December and assesses January–February 2026. No assessment target enters its fold's fitting, stopping or calibration blocks. These dates were already inspected in the original study, so all new comparisons are development evidence.
+
+The comparison retains 22,670 common station–target cases out of 24,360 aligned cases. Every listed model and baseline uses the same valid targets and finite predictions; each station's MAE is calculated first and stations are then weighted equally. The fresh 10 UTC persistence baseline is essential: improved skill over an old 00 UTC forecast can arise from more recent observations and shorter remaining lead rather than a better learning algorithm. Comparisons among the 00 UTC refits separate training recency and the removal of weather predictors; the weather-absent cases simulate operational missingness at inference.
+
+Station-balanced MAE (µg m⁻³), by target lead from the 00 UTC CAMS initialization:
+
+| Model/input condition | +12 h | +24 h | +48 h | +72 h |
+| --- | --- | --- | --- | --- |
+| Frozen 00 UTC, archived weather | 10.42 | 10.90 | 11.75 | 12.09 |
+| Frozen 00 UTC, weather absent | 10.47 | 10.97 | 11.71 | 12.04 |
+| Refit 00 UTC, archived weather | 10.55 | 10.71 | 11.59 | 12.00 |
+| Refit 00 UTC, weather absent | 10.64 | 10.77 | 11.59 | 12.00 |
+| Refit 00 UTC, no weather input | 10.33 | 10.78 | 11.60 | 12.01 |
+| Refit 10 UTC, no weather input | 9.67 | 10.77 | 11.58 | 12.01 |
+| Persistence at 10 UTC | 12.43 | 14.38 | 15.17 | 15.56 |
+| Training-only climatology | 12.74 | 13.70 | 13.78 | 13.79 |
+
+Uncertainty resamples 36 whole calendar weeks, retaining all stations and paired model errors inside each sampled week. The 1,000-replicate bootstrap then recomputes the mean of station MAE differences. This retains same-week spatial dependence but does not represent dependence longer than a week, interannual variability or unknown historical reporting latency. The table gives 95% intervals for MAE reduction (µg m⁻³); values above zero favour the candidate. Coverage is the inclusion rate of its nominal 80% prediction interval, not a confidence interval on mean error.
+
+| Lead (h) | n | Gain vs frozen | Gain vs fresh persistence | Coverage (%) |
+| --- | --- | --- | --- | --- |
+| +12 | 5,756 | [0.54, 0.98] | [2.27, 3.24] | 77.3 |
+| +24 | 5,675 | [0.01, 0.26] | [3.03, 4.32] | 74.7 |
+| +48 | 5,627 | [0.05, 0.36] | [3.09, 4.19] | 74.9 |
+| +72 | 5,612 | [-0.06, 0.26] | [3.05, 4.12] | 74.9 |
+
+The 10 UTC update reduces average error most clearly at the shortest remaining horizon. Longer-lead gains over the frozen model are small, and the 95% interval includes zero for the +62 h remaining lead. The refitted 00 UTC models perform similarly at the longer leads, so those gains cannot be assigned specifically to the later observation cutoff. Better national mean error does not establish uniformly better forecasts at individual stations.
+
+Candidate prediction intervals are symmetric around the point forecast, with a lead-specific half-width estimated from absolute residuals on the separate preceding calibration month; the lower bound is clipped at zero. The finite-sample quantile uses the same ceiling-rank rule defined in Appendix A. These are residual-based intervals, distinct from the original model's conditional quantile intervals. Nominal coverage is not guaranteed under nonstationary, temporally dependent station observations.
+
+High-concentration cases equal or exceed each station–lead training-period 90th percentile, computed from fitting plus tuning targets only. The next table reports conditional MAE (µg m⁻³) and interval coverage on these cases. The final column counts stations, out of 27, whose overall candidate MAE exceeds fresh persistence (P) or the frozen model (F). These stations remain visible in the evaluation.
+
+| Lead (h) | High n | Candidate | Persistence | Coverage (%) | Harmed P / F |
+| --- | --- | --- | --- | --- | --- |
+| +12 | 767 | 27.3 | 32.8 | 36.9 | 2 / 3 |
+| +24 | 886 | 29.4 | 37.9 | 38.8 | 0 / 11 |
+| +48 | 880 | 32.3 | 39.0 | 36.0 | 0 / 12 |
+| +72 | 882 | 34.3 | 40.9 | 34.2 | 0 / 9 |
+
+The symmetric intervals cover only about one third of observed high-concentration cases despite much higher overall coverage. The nominal 80% target is marginal; it does not guarantee 80% coverage after selecting cases by their observed concentration. Nevertheless, the much lower high-event coverage is a material limitation for warning use: a single absolute-error half-width poorly represents the larger errors during high concentrations. Aggregate MAE improvement alone therefore cannot justify operational acceptance.
+
+Candidate preparation, model fitting, development scoring and freezing used 3.4 minutes and a measured peak resident memory of 1.30 GiB on this workstation. The separately frozen future candidate fits targets through June 2026 and reserves July–August 2026 for interval calibration; those calibration scores are not prospective acceptance results. Its tree counts are fixed from the earlier fold-tuning choices.
+
+The historical archive records observation times, not the time each value first arrived. A reconstruction using 10 UTC observations therefore assumes those values were available at the cutoff and cannot establish historical service readiness. Future shadow forecasts must record first-arrival cutoffs, completion time, remaining lead, input freshness and model identity. The original deployed bundle remains frozen; development improvements alone do not authorize promotion or public use.
+
+### 7.3 Input-scaled uncertainty correction
+
+One additional uncertainty experiment was specified after inspecting the initial candidate's high-event undercoverage. It is explicitly adaptive development, not a newly independent test. Point predictions, model inputs, chronological assessment cases and calibration dates were held fixed. The interval scale uses only the point forecast and the latest observation at the 10 UTC cutoff, with a 10 µg m⁻³ floor:
+
+$$s_i=\max(10,\hat y_i,y_{s,10}),\qquad E_i=\frac{|y_i-\hat y_i|}{s_i},\qquad [L_i,U_i]=[\max(0,\hat y_i-c_hs_i),\hat y_i+c_hs_i].$$
+
+Here s is a concentration scale in µg m⁻³; the prediction and cutoff observation have the same units. An unavailable cutoff observation is omitted from the maximum. E is a dimensionless normalized absolute residual, and c is its lead-specific nominal 80% calibration quantile, calculated exclusively from the held calibration block using the finite-sample rule in Appendix A. Larger forecast or current concentrations can therefore widen the band without using the unknown future observation to select its width.
+
+Each table entry is original symmetric / input-scaled. Lead is measured from the 10 UTC observation cutoff. Width and interval score are in µg m⁻³; lower interval score is better because it penalizes both excessive width and observations outside the band. Coverage uses the same common cases and training-defined high-event subsets reported above.
+
+| Lead (h) | Coverage (%) | High coverage (%) | Width | Interval score |
+| --- | --- | --- | --- | --- |
+| +2 | 77.3 / 81.8 | 36.9 / 54.0 | 24.3 / 30.9 | 59.4 / 53.0 |
+| +14 | 74.7 / 79.6 | 38.8 / 52.1 | 22.0 / 28.9 | 71.1 / 61.7 |
+| +38 | 74.9 / 79.4 | 36.0 / 47.7 | 23.7 / 30.1 | 76.2 / 68.4 |
+| +62 | 74.9 / 79.7 | 34.2 / 43.5 | 24.1 / 31.0 | 79.2 / 72.7 |
+
+Input scaling moves overall coverage closer to 80% and lowers interval score at every lead, despite wider average bands. It also increases high-event coverage, but substantial high-event misses remain. These results support testing the scaled bands in shadow mode; they do not validate warning performance or remove the station-level point-forecast regressions. No further scale search was performed on the development results.
+
+This single correction required 77.1 s and retained the frozen point-model artifacts. It changes only uncertainty scaling. The final point and interval versions are recorded separately in the non-public parallel shadow outputs, with independent completion/freshness eligibility and delayed verification. The original model and scheduled cycle remain in place, and candidate failure does not remove the original forecast.
+
 ## 8. Limitations and readiness gates
 
 - The model has been retrospectively tested at one daily cycle only. It is not evidence for 12 UTC or arbitrary issue times.
 - Direct CAMS availability is later than model initialization. At the installed schedule, +3 h and +6 h are latency diagnostics rather than prospective forecasts; +12 h is eligible only if generation completes before 12 UTC. Prospective reporting uses the stored per-row eligibility flag.
-- The test period covers eight months of 2026, not a complete annual cycle, and no prospective shadow period has yet been observed.
+- The original test covers eight months of 2026, not a complete annual cycle. The short September shadow record is insufficient for prospective acceptance, and reused 2026 candidate comparisons are development evidence.
 - CAMS has a much coarser footprint than a station and its forecasting system can change over time; a sampled grid value is not a station measurement.
 - The CAMS mirror is 99.54% complete for the specified station–issue–lead grid; missing cycles are excluded from primary complete-case comparisons and require the declared degraded fallback in operations.
 - Forecast meteorology was not included in this bounded archive acquisition. Observed meteorology is available only at and before issue time and cannot represent future dispersion conditions.
@@ -296,7 +369,7 @@ The boosted-tree point model is additive,
 
 $$F_M(\mathbf x)=F_0(\mathbf x)+\eta\sum_{m=1}^M f_m(\mathbf x),$$
 
-where $f_m$ is a regression tree and $\eta$ is the learning rate. LightGBM minimizes absolute-error loss $\sum_i|y_i-F_M(\mathbf x_i)|$ using learning rate 0.035, at most 1400 trees, 63 leaves, minimum 120 child cases, 0.85 row/feature subsampling, and L1/L2 penalties 0.1/0.5. XGBoost uses the same absolute-error target, learning rate 0.04, at most 1200 histogram trees, depth 8, minimum child weight 20.0, 0.85 row/feature subsampling, and L1/L2 penalties 0.1/1.0. Early stopping ends fitting after 80 validation rounds without improvement. Negative predictions are set to zero.
+where $f_m$ is a regression tree and $\eta$ is the learning rate. LightGBM minimizes absolute-error loss $\sum_i|y_i-F_M(\mathbf x_i)|$ using learning rate 0.035, at most 1400 trees, 63 leaves, minimum 120 child cases, a 0.85 feature fraction, and L1/L2 penalties 0.1/0.5. Its row-sampling fraction was configured as 0.85 but remained inactive because bagging frequency was zero; the fitted models did not subsample rows. XGBoost uses the same absolute-error target, learning rate 0.04, at most 1200 histogram trees, depth 8, minimum child weight 20.0, 0.85 row/feature subsampling, and L1/L2 penalties 0.1/1.0. Early stopping ends fitting after 80 validation rounds without improvement. Negative predictions are set to zero.
 
 Candidate selection minimizes the mean of six lead-specific, station-balanced validation MAEs. If CAMS LightGBM is within 1% of the minimum, it is preferred by the predeclared operational tie-break. This selected CAMS LightGBM was then evaluated once on 2026. Training targets cover 2023–2024, point-model validation covers 2025, and test targets cover 1 January–31 August 2026. The training time-series panel uses three later-than-fit expanding windows; its +24 h station-balanced out-of-fold MAE is 10.46 µg m⁻³. Its hyperparameters were selected later in 2025, so it is a diagnostic rather than an independent selection estimate.
 

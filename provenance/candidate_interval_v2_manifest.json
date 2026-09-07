@@ -1,0 +1,199 @@
+{
+  "artifacts": {
+    "coefficients": {
+      "bytes": 588,
+      "path": "tables/candidate_interval_v2_coefficients.csv",
+      "sha256": "35fa0d192af00708c3c0a04ba658d3fe79a671b1f85fdae88f1c749ecda49cfe"
+    },
+    "metrics": {
+      "bytes": 1736,
+      "path": "tables/candidate_interval_comparison.csv",
+      "sha256": "9614eaa939077026a05e8f3512cd983ed72c56eb7922fad29ec121f9145bb0c0"
+    },
+    "predictions": {
+      "bytes": 1402977,
+      "path": "data/derived/candidate_interval_v2_predictions.csv.gz",
+      "sha256": "28ed5c8ea8f2ed6b088c2ac15861a2f7c12c70680bc5c34c1eaa67bdd77180f6"
+    }
+  },
+  "asof_10utc_audit": {
+    "cams_missing_rows": 830,
+    "cams_sha256": "55fb735e1133b4094a97651523b2488bdde7e4c076961a7c16156e13f1b7abfc",
+    "cams_source": "data/external/cams_earth_engine/cams_station_forecasts_20230101_20260831.csv.gz",
+    "mapping": {
+      "12": 2,
+      "24": 14,
+      "48": 38,
+      "72": 62
+    },
+    "observation_sha256": "977b81c4342672463e77ff49317013356717111c5d772ed53a2463d8413a2d04",
+    "observation_source": "data/derived/observations_quality_controlled.csv.gz",
+    "rows": 144612,
+    "stations": 27,
+    "target_end_utc": "2026-08-31T12:00:00+00:00",
+    "target_start_utc": "2023-01-01T00:00:00+00:00",
+    "target_time_mismatches": 0
+  },
+  "candidate_config_sha256": "d1b86b6efc0baed34f62690318b5f8ed2073c75a0c313738775dc30f52ca8df3",
+  "base_config_sha256": "5ffeea8907a9f98f318d04cae6690ac810c159f7a446d0236f77f896d9a8f11a",
+  "point_manifest_sha256": "554a58c4d1dbfe48106894062bbf41714d7698dc6a4c68f1e5ea063307bf2af7",
+  "correction_config_sha256": "492505d72e78bb3746f0e3787e1109ba18df1076613de11a44f5a65883e9ac99",
+  "development_only": true,
+  "fold_coefficients": [
+    {
+      "adaptive_interval_coefficient": 0.5632766420804768,
+      "best_iteration": 262,
+      "calibration_rows": 733,
+      "fold": 1,
+      "forecast_hour": 12
+    },
+    {
+      "adaptive_interval_coefficient": 0.5127445344259332,
+      "best_iteration": 142,
+      "calibration_rows": 719,
+      "fold": 1,
+      "forecast_hour": 24
+    },
+    {
+      "adaptive_interval_coefficient": 0.5204503259679633,
+      "best_iteration": 218,
+      "calibration_rows": 719,
+      "fold": 1,
+      "forecast_hour": 48
+    },
+    {
+      "adaptive_interval_coefficient": 0.5479071822249227,
+      "best_iteration": 348,
+      "calibration_rows": 719,
+      "fold": 1,
+      "forecast_hour": 72
+    },
+    {
+      "adaptive_interval_coefficient": 0.5330362792947597,
+      "best_iteration": 112,
+      "calibration_rows": 705,
+      "fold": 2,
+      "forecast_hour": 12
+    },
+    {
+      "adaptive_interval_coefficient": 0.5951963712985434,
+      "best_iteration": 273,
+      "calibration_rows": 698,
+      "fold": 2,
+      "forecast_hour": 24
+    },
+    {
+      "adaptive_interval_coefficient": 0.6054334136611705,
+      "best_iteration": 239,
+      "calibration_rows": 698,
+      "fold": 2,
+      "forecast_hour": 48
+    },
+    {
+      "adaptive_interval_coefficient": 0.6361123243390459,
+      "best_iteration": 436,
+      "calibration_rows": 698,
+      "fold": 2,
+      "forecast_hour": 72
+    },
+    {
+      "adaptive_interval_coefficient": 0.6402675469149877,
+      "best_iteration": 81,
+      "calibration_rows": 751,
+      "fold": 3,
+      "forecast_hour": 12
+    },
+    {
+      "adaptive_interval_coefficient": 0.5459838530850873,
+      "best_iteration": 398,
+      "calibration_rows": 731,
+      "fold": 3,
+      "forecast_hour": 24
+    },
+    {
+      "adaptive_interval_coefficient": 0.56576390430074,
+      "best_iteration": 197,
+      "calibration_rows": 731,
+      "fold": 3,
+      "forecast_hour": 48
+    },
+    {
+      "adaptive_interval_coefficient": 0.6063437867482921,
+      "best_iteration": 187,
+      "calibration_rows": 731,
+      "fold": 3,
+      "forecast_hour": 72
+    },
+    {
+      "adaptive_interval_coefficient": 0.5224894104035213,
+      "best_iteration": 791,
+      "calibration_rows": 745,
+      "fold": 4,
+      "forecast_hour": 12
+    },
+    {
+      "adaptive_interval_coefficient": 0.5031465382967171,
+      "best_iteration": 135,
+      "calibration_rows": 740,
+      "fold": 4,
+      "forecast_hour": 24
+    },
+    {
+      "adaptive_interval_coefficient": 0.570397327486295,
+      "best_iteration": 114,
+      "calibration_rows": 740,
+      "fold": 4,
+      "forecast_hour": 48
+    },
+    {
+      "adaptive_interval_coefficient": 0.6005995979626949,
+      "best_iteration": 89,
+      "calibration_rows": 740,
+      "fold": 4,
+      "forecast_hour": 72
+    }
+  ],
+  "future_coefficients": [
+    {
+      "adaptive_interval_coefficient": 0.42807230285282943,
+      "calibration_rows": 1606,
+      "forecast_hour": 12,
+      "point_model_sha256": "f5902daff10fe81bc20aeaf5aed016e8752d895f8541f907d7ddacaa8f5ea7bc",
+      "remaining_horizon_hours": 2
+    },
+    {
+      "adaptive_interval_coefficient": 0.5223813388411667,
+      "calibration_rows": 1626,
+      "forecast_hour": 24,
+      "point_model_sha256": "add9841dcd0a19fcaf7d12631b20369358ae0e9e57aa14cdc697abe76b53f49f",
+      "remaining_horizon_hours": 14
+    },
+    {
+      "adaptive_interval_coefficient": 0.5795132405017124,
+      "calibration_rows": 1626,
+      "forecast_hour": 48,
+      "point_model_sha256": "4a0ac37744a871f693febc77fd0dccf2fd0075891e595bb707182ae14c14fe1c",
+      "remaining_horizon_hours": 38
+    },
+    {
+      "adaptive_interval_coefficient": 0.6086930398360578,
+      "calibration_rows": 1626,
+      "forecast_hour": 72,
+      "point_model_sha256": "45f97f5135c02ac6975bbd29683da9f3a169f45fad9a9d9d8b600926cb706fb1",
+      "remaining_horizon_hours": 62
+    }
+  ],
+  "generated_utc": "2026-09-07T03:26:29.307149+00:00",
+  "interval_version": "pm25_no_met_10utc_interval_scale_v2",
+  "limitations": [
+    "This is the single predeclared adaptive interval correction motivated by v1 high-event undercoverage.",
+    "It changes uncertainty scaling only; point forecasts and station-level harms are unchanged.",
+    "January-August 2026 remains development evidence rather than independent acceptance evidence."
+  ],
+  "maximum_resident_set_size_kib": 1365996,
+  "point_candidate_version": "pm25_no_met_10utc_v1",
+  "promotion_authorized": false,
+  "runtime_seconds": 77.06359936998342,
+  "schema_version": 1,
+  "v1_predictions_sha256": "35d0162ae0017fe4127289bd9494de4a7230e196332704c454f7d0bd1c2395e0"
+}

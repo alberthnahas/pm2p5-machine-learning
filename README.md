@@ -109,6 +109,18 @@ observations and errors are evidence for a separately versioned retraining
 decision; the cron job does not adapt the model in place because that would
 invalidate prospective evaluation.
 
+A separately frozen candidate uses observation histories ending at 10 UTC and maps
+the 00 UTC CAMS +12/+24/+48/+72 h forecasts to +2/+14/+38/+62 h remaining lead.
+It is written under a distinct model-and-interval bundle, is never substituted
+for the frozen output, and is scored only on post-freeze rows with complete
+all-27-station CAMS input and fresh observations. January–August 2026
+development evidence improved station-balanced MAE over the frozen model by
+7.23%, 1.25%, 1.48%, and 0.62%, respectively; the +62 h block-bootstrap
+interval included zero improvement. The candidate is therefore not promoted.
+Its adaptive 80% intervals reached 79.42–81.85% overall development coverage
+but only 43.54–53.98% on high-concentration events, which remains an explicit
+prospective acceptance risk.
+
 Validate the complete frozen result, including source checksums, leakage
 audits, model bundles, figures, notebook, report, and operational output:
 

@@ -9,6 +9,7 @@ data/derived/
 data/external/
 models/research/
 models/deployment/
+models/candidate/
 reports/rendered_pages/
 
 # Local execution and compilation logs can contain machine-specific details.
@@ -19,6 +20,8 @@ provenance/report_extracted_text.txt
 # operational data. Keep the documented workflow, not the data, in Git.
 shadow/inputs/
 shadow/forecasts/
+shadow/candidate_forecasts/
+shadow/candidate_state/
 shadow/verification/
 shadow/state/
 shadow/logs/

@@ -134,3 +134,65 @@ uses only information available at its issue time.
   figure-by-figure derivations, and all nine station-atlas pages.
 - [x] Implement and schedule the non-public daily shadow acquisition,
   forecast, first-arrival verification, and structured health logging workflow.
+
+## Operational improvement review: September 2026
+
+The original January–August 2026 test has already been inspected. Any new
+candidate evaluated on those dates is a development comparison, not another
+independent test. Keep the frozen research and deployment bundles unchanged;
+independent promotion evidence must begin after a new candidate is frozen.
+
+Scientific question: can a model trained for the predictors actually available
+in daily operations improve paired station-balanced PM₂.₅ error without
+unacceptable station or high-concentration degradation? Compare predictor
+availability and training recency separately. Use chronological target-time
+folds, earlier stopping blocks, common cases, persistence and training-only
+climatology. Quantify uncertainty by calendar-week blocks to retain shared
+regional weather dependence. Limit the initial study to a few physically
+motivated variants and approximately 20 minutes of model computation.
+
+Initial operational evidence identifies failed current-cycle CAMS requests,
+missing live humidity and temperature, issue-to-generation delays exceeding
+the shortest leads, and verification summaries that mix expired forecasts
+with prospective predictions. Sparse September evidence cannot establish
+operational readiness.
+
+- [x] Preserve source, frozen model, and historical forecast checksums.
+- [x] Correct completion timing, prospective eligibility, model integrity,
+  versioned/common-case verification, and explicit promotion gates.
+- [x] Verify a minimal recent-cycle ADS request and bounded permanent-error handling.
+- [x] Execute and archive chronological candidate and missing-input comparisons.
+- [x] Review numerical results, uncertainty, station harms and event behavior.
+- [x] Integrate measured findings into the existing report and inspect all
+  pages of its exact final build.
+- [x] Complete focused tests, artifact validation and Astra acceptance review.
+
+No public deployment, remote upload, scheduler replacement, or model promotion
+is part of this improvement review. A longer prospective evaluation and an
+explicit operational sign-off remain required when its criteria are not met.
+
+The bounded development comparison uses 22,670 common station-target cases,
+27 stations and four chronological 2026 folds. At remaining leads +2, +14,
++38 and +62 hours, station-balanced candidate MAE is 9.67, 10.77, 11.58 and
+12.01 micrograms per cubic metre. The clearest gain over the frozen model is
+at +2 hours; its long-lead advantage is small and the +62-hour interval for
+MAE reduction includes zero. Between 3 and 12 stations have higher candidate
+MAE than the frozen model, depending on lead.
+
+One explicitly adaptive, input-scaled interval correction retained the point
+forecasts and fixed calibration blocks. Overall coverage improves to
+81.8%, 79.6%, 79.4% and 79.7%, but high-concentration coverage remains only
+54.0%, 52.1%, 47.7% and 43.5%. These findings support separate non-public
+prospective shadow testing, not warning use or promotion. Historical 10 UTC
+input availability is assumed because the archive lacks first-arrival times.
+The original model remains primary. The existing report retains its original
+reference experiment and all nine atlas plates; final visual QA covers all
+29 pages and records the exact PDF checksum.
+
+Acceptance checks: 23 focused/repository tests pass; the final artifact
+validator passes 24 checks with zero failures. Hardened prepared-input
+candidate inference produces all 108 ordered finite station-lead forecasts
+in 0.130 seconds and correctly excludes all engineering replay rows from
+prospective scoring. The original research/deployment bundles and all
+27 source observation files retain their baseline checksums. This accepts
+the implementation for non-public parallel shadow evaluation only.

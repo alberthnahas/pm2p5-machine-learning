@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from pm25ml.shadow import run_daily_shadow  # noqa: E402
+from pm25ml.shadow import record_shadow_failure, run_daily_shadow  # noqa: E402
 
 
 def main() -> None:
@@ -22,7 +22,12 @@ def main() -> None:
         help="Optional YYYY-MM-DD date for the validated 00 UTC cycle",
     )
     args = parser.parse_args()
-    print(json.dumps(run_daily_shadow(args.issue_date), indent=2, default=str))
+    try:
+        result = run_daily_shadow(args.issue_date)
+    except Exception as error:
+        record_shadow_failure(args.issue_date, error)
+        raise
+    print(json.dumps(result, indent=2, default=str))
 
 
 if __name__ == "__main__":

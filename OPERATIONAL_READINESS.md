@@ -36,8 +36,10 @@ delayed verification. No upload or public product is configured.
 
 - [x] Define the observation snapshot cutoff and record realized generation
   latency, including targets already reached before generation.
-- [x] Implement a current-cycle direct CAMS downloader with three bounded
-  attempts, archive/schema/unit checks, and an explicit degraded fallback.
+- [x] Implement a current-cycle direct CAMS downloader with at most two bounded
+  attempts, a 300-second total request limit, archive/schema/unit checks, and
+  an explicit degraded fallback. A permanent HTTP 400 response is not repeated
+  within the same run.
 - [x] Add idempotent run identifiers, structured logs, atomic local output, and
   indefinite evidence retention during the initial evaluation.
 - [x] Connect forecast verification to observations only after their arrival;
@@ -45,11 +47,17 @@ delayed verification. No upload or public product is configured.
 - [ ] Define alert owners and thresholds for input freshness, station coverage,
   range/schema changes, inference failure, and degraded fallback frequency.
 - [x] Exercise idempotent restart and partial CAMS-input fallback locally.
+- [x] Freeze a distinct 10 UTC candidate and adaptive interval version, require
+  complete CAMS coverage at all 27 stations, preserve isolated failure/retry
+  state, and keep its prospective scorecard separate from the frozen bundle.
 
 ## Required before duty-forecaster or public use
 
 - [ ] Complete at least 60–90 days of prospective shadow verification, including
   station-, lead-, season-, and high-concentration scorecards.
+- [ ] Evaluate the 10 UTC candidate on genuinely post-freeze data. Its
+  January–August 2026 development gains over the frozen model were small at
+  longer leads, and high-event interval coverage remained below nominal.
 - [ ] Backtest the 12 UTC cycle if it will be issued; current evidence applies to
   00 UTC only.
 - [ ] Acquire forecast wind, boundary-layer height, humidity, temperature, and
@@ -83,6 +91,9 @@ delayed verification. No upload or public product is configured.
   forecast; withhold primary-model intervals.
 - Publication behavior: no publication when schema checks or model-manifest
   checksums fail.
+- Candidate behavior: failure cannot alter the frozen forecast; a later run
+  retries the missing candidate, while a checksum-verified successful output
+  remains immutable.
 
 ## Rollback principle
 

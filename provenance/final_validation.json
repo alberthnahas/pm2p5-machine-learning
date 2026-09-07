@@ -256,7 +256,10 @@
       "detail": {
         "atlas_plates_inspected": 9,
         "checks": {
+          "adaptive_uncertainty_equation_and_calibration_limits_disclosed": true,
           "all_27_stations_present_in_integrated_atlas": true,
+          "candidate_headline_values_independently_reconciled": true,
+          "candidate_leads_and_units_legible": true,
           "chronological_split_labels_correct": true,
           "color_encoding_consistent_with_captions": true,
           "equations_and_worked_values_legible": true,
@@ -266,7 +269,9 @@
           "missing_data_visually_distinct_from_zero": true,
           "no_clipped_content": true,
           "no_overlapping_content": true,
-          "no_separate_atlas_document": true
+          "no_separate_atlas_document": true,
+          "original_test_and_reused_development_evidence_distinguished": true,
+          "station_harms_and_high_event_undercoverage_visible": true
         },
         "figure_manifest_sha256": "3f409b6ed20d6e82bc43130d6b9e1f81f17e6cfaa35456ae4f546531bdc0903e",
         "figures_inspected": [
@@ -282,10 +287,10 @@
           "figure_09_residual_bias",
           "integrated_all_station_test_atlas"
         ],
-        "inspected_utc": "2026-09-04T11:43:00Z",
-        "method": "Contact-sheet inspection of all 26 rendered report pages, including the formula and calculation appendix and all nine integrated atlas plates; full-resolution checks of chart labels, table typography, equations, legends, gaps, and atlas source plates",
-        "pdf_pages_inspected": 26,
-        "pdf_sha256": "b0baaa685f9e837fb4809b21b15a68a17ef3b086db80f9aa6ea3f87855525a5e",
+        "inspected_utc": "2026-09-07T03:36:13Z",
+        "method": "Individual readable-scale inspection of every page of the exact final 29-page PDF rendered at 120 dpi, including the availability-aware candidate, input-scaled uncertainty equation and tables, technical methods, landscape station table, and all nine integrated atlas plates; no page was accepted solely from a contact sheet",
+        "pdf_pages_inspected": 29,
+        "pdf_sha256": "068576fdb62f682d55ea490d56b57bfec2fe5f5e167c6f0acb0fb0b33702a3ed",
         "status": "pass"
       },
       "name": "current figure and PDF visual inspection",
@@ -307,15 +312,15 @@
     {
       "detail": {
         "all_fonts_embedded": true,
-        "bytes": 9561622,
-        "compilation_log_sha256": "aacec1adfdf3f44d5a72c603ae90e88cda3979d94e6ebc8e2cf97dd75b998354",
+        "bytes": 9573775,
+        "compilation_log_sha256": "921dd2450f65f5c859b551f1ccc4112fc3fa73282d29f7b2ea034efc2fdb7f00",
         "missing_required_phrases": [],
         "page_size": "595.28 x 841.89 pts (A4)",
-        "pages": 26,
+        "pages": 29,
         "pdf": "reports/pm25_station_cams_mos_research_to_operations.pdf",
-        "rendered_pages": 26,
-        "sha256": "b0baaa685f9e837fb4809b21b15a68a17ef3b086db80f9aa6ea3f87855525a5e",
-        "verified_utc": "2026-09-04T11:40:07.381344+00:00"
+        "rendered_pages": 29,
+        "sha256": "068576fdb62f682d55ea490d56b57bfec2fe5f5e167c6f0acb0fb0b33702a3ed",
+        "verified_utc": "2026-09-07T03:32:33.032010+00:00"
       },
       "name": "PDF structural QA",
       "passed": true
@@ -332,5 +337,5 @@
   "failed_checks": 0,
   "passed_checks": 24,
   "status": "pass",
-  "validated_utc": "2026-09-04T11:43:44.454586+00:00"
+  "validated_utc": "2026-09-07T03:43:37.673340+00:00"
 }
